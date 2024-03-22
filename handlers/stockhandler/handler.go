@@ -24,12 +24,12 @@ func NewHandlers(service *stockservice.Service, logger *zap.Logger) *Handlers {
 	}
 }
 
-type StockResponse struct {
+type StockSearchResponse struct {
 	Success      bool                           `json:"success"`
 	Query        string                         `json:"query"`
 	Limit        int                            `json:"limit"`
 	TotalResults int                            `json:"totalResults"`
-	Results      []stockservice.SearchStockItem `json:"results"`
+	Results      []stockservice.StockSearchItem `json:"results"`
 }
 
 func (h *Handlers) SearchStocks(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +66,7 @@ func (h *Handlers) SearchStocks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := StockResponse{
+	response := StockSearchResponse{
 		Success:      true,
 		Query:        query,
 		Limit:        limit,

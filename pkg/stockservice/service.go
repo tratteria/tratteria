@@ -19,7 +19,7 @@ func NewService(db *sql.DB, logger *zap.Logger) *Service {
 	}
 }
 
-type SearchStockItem struct {
+type StockSearchItem struct {
 	Id     string `json:"id"`
 	Symbol string `json:"symbol"`
 	Name   string `json:"name"`
@@ -34,8 +34,8 @@ type StockItem struct {
 	TotalAvailableShares string `json:"totalAvailableShares"`
 }
 
-func (s *Service) SearchStocks(query string, limit int) ([]SearchStockItem, error) {
-	var stocks []SearchStockItem
+func (s *Service) SearchStocks(query string, limit int) ([]StockSearchItem, error) {
+	var stocks []StockSearchItem
 
 	sqlStatement := `SELECT id, symbol, name FROM stocks WHERE name LIKE ? OR symbol LIKE ? LIMIT ?`
 
@@ -49,7 +49,7 @@ func (s *Service) SearchStocks(query string, limit int) ([]SearchStockItem, erro
 	defer rows.Close()
 
 	for rows.Next() {
-		var stock SearchStockItem
+		var stock StockSearchItem
 		if err := rows.Scan(&stock.Id, &stock.Symbol, &stock.Name); err != nil {
 			s.Logger.Error("Error scanning stock rows.", zap.Error(err))
 
