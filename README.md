@@ -1,6 +1,6 @@
 # TraTs-Demo-Svcs
 
-TraTs-Demo-Svcs is a collection of sample services designed to demonstrate the effectiveness of the security measures implemented via Transaction Tokens (Txn-Tokens). The project showcases how individual microservices components can interact securely via Txn-Tokens.
+TraTs-Demo-Svcs is a collection of sample services designed to demonstrate the effectiveness of the security measures implemented via Transaction Tokens (TraTs). The project showcases how individual microservices components can interact securely via TraTs.
 
 ## How to Run
 
