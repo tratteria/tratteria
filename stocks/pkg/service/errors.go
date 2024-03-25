@@ -1,4 +1,4 @@
-package stockservice
+package service
 
 import "errors"
 

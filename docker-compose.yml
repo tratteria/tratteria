@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: ./gateway
+    environment:
+      - STOCKS_SERVICE_URL=http://stocks:8080
+    ports:
+      - "8000:8000"
+  
+  stocks:
+    build:
+      context: ./stocks
+    volumes:
+      - stocks-db:/var/lib/stocks-db
+    environment:
+      - STOCKS_DB_PATH=/var/lib/stocks-db/stock.db
+
+volumes:
+  stocks-db:

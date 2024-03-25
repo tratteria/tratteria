@@ -1,4 +1,4 @@
-package stockhandler
+package handler
 
 import (
 	"encoding/json"
@@ -6,30 +6,30 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/SGNL-ai/Txn-Tokens-Demonstration-Services/pkg/stockservice"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/service"
 	"github.com/gorilla/mux"
 
 	"go.uber.org/zap"
 )
 
 type Handlers struct {
-	Service *stockservice.Service
+	Service *service.Service
 	Logger  *zap.Logger
 }
 
-func NewHandlers(service *stockservice.Service, logger *zap.Logger) *Handlers {
+func NewHandlers(service *service.Service, logger *zap.Logger) *Handlers {
 	return &Handlers{
 		Service: service,
 		Logger:  logger,
 	}
 }
 
-type StockSearchResponse struct {
-	Success      bool                           `json:"success"`
-	Query        string                         `json:"query"`
-	Limit        int                            `json:"limit"`
-	TotalResults int                            `json:"totalResults"`
-	Results      []stockservice.StockSearchItem `json:"results"`
+type StocksSearchResponse struct {
+	Success      bool                      `json:"success"`
+	Query        string                    `json:"query"`
+	Limit        int                       `json:"limit"`
+	TotalResults int                       `json:"totalResults"`
+	Results      []service.StockSearchItem `json:"results"`
 }
 
 func (h *Handlers) SearchStocks(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +58,8 @@ func (h *Handlers) SearchStocks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	h.Logger.Info("A stock-search request received.", zap.String("query", query), zap.Int("limit", limit))
+
 	stocks, err := h.Service.SearchStocks(query, limit)
 	if err != nil {
 		h.Logger.Error("Error encountered in a stock-search request.", zap.Error(err))
@@ -66,7 +68,7 @@ func (h *Handlers) SearchStocks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := StockSearchResponse{
+	response := StocksSearchResponse{
 		Success:      true,
 		Query:        query,
 		Limit:        limit,
@@ -78,7 +80,11 @@ func (h *Handlers) SearchStocks(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.Logger.Error("Failed to encode JSON response of a stock-search request.", zap.Error(err))
+
+		return
 	}
+
+	h.Logger.Info("A stock-search request processed successfully.", zap.String("query", query), zap.Int("limit", limit))
 }
 
 func (h *Handlers) GetStockDetails(w http.ResponseWriter, r *http.Request) {
@@ -93,9 +99,11 @@ func (h *Handlers) GetStockDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.Logger.Info("A get-stock-details request received.", zap.Int("id", id))
+
 	stock, err := h.Service.GetStockDetails(id)
 	if err != nil {
-		if errors.Is(err, stockservice.ErrStockNotFound) {
+		if errors.Is(err, service.ErrStockNotFound) {
 			h.Logger.Error("Stock not found", zap.Int("id", id))
 			http.Error(w, "Stock not found", http.StatusNotFound)
 
@@ -112,5 +120,9 @@ func (h *Handlers) GetStockDetails(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(stock); err != nil {
 		http.Error(w, "Failed to encode response of a get-stock-details request.", http.StatusInternalServerError)
+
+		return
 	}
+
+	h.Logger.Info("A get-stock-details request processed successfully.", zap.Int("id", id))
 }

@@ -1,20 +1,23 @@
-module github.com/SGNL-ai/Txn-Tokens-Demonstration-Services
+module github.com/SGNL-ai/TraTs-Demo-Svcs/stocks
 
 go 1.22.0
 
 require (
-	github.com/golang-migrate/migrate/v4 v4.17.0 // indirect
+	github.com/golang-migrate/migrate/v4 v4.17.0
+	github.com/gorilla/mux v1.8.1
+	github.com/mattn/go-sqlite3 v1.14.22
+	go.uber.org/zap v1.27.0
+)
+
+require (
 	github.com/google/uuid v1.4.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/tools v0.10.0 // indirect
