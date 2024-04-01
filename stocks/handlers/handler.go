@@ -33,6 +33,14 @@ type StocksSearchResponse struct {
 }
 
 func (h *Handlers) SearchStocks(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("x-user-name")
+	if username == "" {
+		h.Logger.Error("Unable to extract username header.")
+		http.Error(w, "Unable to extract username header.", http.StatusInternalServerError)
+
+		return
+	}
+
 	query := r.URL.Query().Get("query")
 	if query == "" {
 		h.Logger.Error("Missing search query parameter in a stock-search request.")

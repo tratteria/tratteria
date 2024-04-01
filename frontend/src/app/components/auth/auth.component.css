@@ -1,0 +1,117 @@
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 150px auto;
+  color: #333;
+}
+
+.auth-box {
+  padding: 60px 30px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  max-width: 350px;
+  margin: auto;
+}
+
+.auth-logo {
+  width: 180px;
+  margin-bottom: 20px;
+  margin-top: -10px; 
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.auth-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-60%);
+  color: #7a42f4;
+  font-size: 20px;
+  z-index: 10;
+}
+
+.auth-input {
+  width: calc(100% - 20px);
+  padding: 20px;
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 15px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+  font-size: 18px;
+  padding-left: 40px;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #7a42f4;
+}
+
+.button-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.auth-button {
+  position: relative;
+  padding-right: 40px;
+}
+
+.auth-button i {
+  position: absolute;
+  margin-left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  font-size: 16px;
+}
+
+.auth-button {
+  padding: 12px 20px;
+
+  flex-basis: 48%;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  background-color: #7a42f4;
+  color: white;
+  transition: box-shadow 0.3s ease, transform 0.2s;
+}
+
+.back-button {
+  font-size: 0.95em;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  background-color: #7a42f4;
+  color: white;
+  text-align: center;
+  margin-top: 30px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-button:hover {
+  transform: scale(1.1);
+}
+
+.auth-button:active {
+  transform: translateY(1px);
+}

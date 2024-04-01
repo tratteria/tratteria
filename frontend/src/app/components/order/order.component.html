@@ -1,0 +1,25 @@
+<div class="order-container">
+  <div class="order-box">
+    <img src="assets/alpha-logo.png" alt="Alpha Logo" class="order-logo" />
+    <div class="stock-details">
+      <p><strong>Name:</strong> {{ stock?.name }}</p>
+      <p><strong>Symbol:</strong> {{ stock?.symbol }}</p>
+      <p><strong>Exchange:</strong> {{ stock?.exchange }}</p>
+      <p><strong>Price:</strong> ${{ stock?.currentPrice }}</p>
+      <p><strong>Total Available:</strong> {{ stock?.totalAvailableShares }}</p>
+    </div>
+    <div class="quantity-container">
+      <label for="quantityInput" class="quantity-label">{{ action === 'Buy' ? 'Quantity Buying' : 'Quantity Selling' }}:</label>
+      <input id="quantityInput" class="quantity-input" type="number"
+             [(ngModel)]="quantity" placeholder="1" min="1"
+             (input)="calculateTotal(); fixNumber($event)" (focus)="onFocus($event)">
+    </div>
+    <p class="total"><strong>Total {{ action === 'Buy' ? 'Cost' : 'Revenue' }}:</strong> ${{ total | number:'1.2-2' }}</p>
+    <div class="button-wrapper">
+      <button [ngClass]="{'buy-button': action === 'Buy', 'sell-button': action === 'Sell'}" class="button" (click)="placeOrder()">
+        <i [ngClass]="{'fa fa-shopping-cart': action === 'Buy', 'fas fa-money-bill-alt': action === 'Sell'}"></i>
+        {{ action }}
+      </button>
+    </div>    
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<div class="app-header">
+  <div class="home-button-container">
+    <button class="home-button" *ngIf="showHomeButton" routerLink="/search">
+      <i class="fas fa-home"></i>
+    </button>
+  </div>
+  
+  <div class="profile-dropdown-container" *ngIf="showProfileOptions">
+    <button class="profile-button">
+      <i class="fas fa-user"></i>
+    </button>
+    <div class="profile-dropdown-content">
+      <a routerLink="/portfolio">Portfolio</a>
+      <a href="#" (click)="logout(); $event.preventDefault()">Logout</a>
+    </div>
+  </div>
+</div>
+
+<router-outlet></router-outlet>
