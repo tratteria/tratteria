@@ -27,6 +27,10 @@ func SetupRoutes(cfg *config.GatewayConfig, logger *zap.Logger) *mux.Router {
 		handleLogin(w, r, logger)
 	}).Methods("POST")
 
+	router.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		handleLogout(w, r, logger)
+	}).Methods("POST")
+
 	return router
 }
 
@@ -54,9 +58,39 @@ func handleLogin(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 		Value:   username,
 		Expires: expiration,
 		Path:    "/",
+		HttpOnly: true,
 	}
 	http.SetCookie(w, &cookie)
 
 	logger.Info("User logged in", zap.String("username", username))
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleLogout(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
+	cookie, err := r.Cookie("session_token")
+	if err != nil || cookie.Value == "" {
+		if err != nil {
+			logger.Error("Failed to retrieve session_token cookie", zap.Error(err))
+		} else {
+			logger.Error("session_token cookie is not present")
+		}
+
+		http.Error(w, "Unauthorized: Missing or invalid authentication cookie.", http.StatusUnauthorized)
+		
+		return
+	}
+
+	expiration := time.Now().Add(-24 * time.Hour)
+	invalidated_cookie := http.Cookie{
+		Name:    "session_token",
+		Value:   "",
+		Expires: expiration,
+		Path:    "/",
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, &invalidated_cookie)
+
+	logger.Info("User logged out", zap.String("username", cookie.Value))
 	w.WriteHeader(http.StatusOK)
 }

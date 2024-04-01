@@ -17,6 +17,7 @@ func Authenticate(next http.Handler, logger *zap.Logger) http.Handler {
 			}
 
 			http.Error(w, "Unauthorized: Missing or invalid authentication cookie.", http.StatusUnauthorized)
+			
 			return
 		}
 
