@@ -1,0 +1,82 @@
+.transaction-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px auto;
+  color: #333;
+}
+
+.transaction-box {
+  padding: 40px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  max-width: 400px;
+}
+
+.transaction-logo {
+  width: 100px;
+  margin-bottom: 15px;
+}
+
+.transaction-details p {
+  color: #555;
+  margin-bottom: 30px;
+  align-items: left;
+}
+
+.transaction-details {
+  align-items: left;
+}
+
+.action-button {
+  padding: 12px 20px;
+  font-size: 0.95em;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  background-color: #7a42f4;
+  color: white;
+  text-align: center;
+  margin-top: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.action-button i {
+  margin-right: 8px; 
+}
+
+.action-button:hover {
+  transform: scale(1.1);
+}
+
+.action-button:active {
+  transform: translateY(1px);
+}
+
+.success-message {
+  text-align: center; 
+  color: #4CAF50; 
+}
+
+.success-icon {
+  color: #4CAF50; 
+  font-size: 2em;
+  margin-bottom: 0.5em;
+}
+
+
+.success-message h2 {
+  color: #5E6AB1;
+}
+

@@ -4,6 +4,8 @@ TraTs-Demo-Svcs is a collection of sample services designed to demonstrate the e
 
 ## How to Run
 
+### Backend
+
 To run the entire suite of services, you can use Docker Compose. This will set up the network, volumes, and service containers required for the project to run.
 
 - To start the services, run:
@@ -19,5 +21,15 @@ docker compose up --build
 ```
 
 Ensure Docker is installed and running on your machine before executing these commands. For more detailed instructions refer to the service-specific README files in their respective directories.
+
+### Client(Frontend)
+
+- To start the client, navigate to the frontend directory and run:
+
+```bash
+npm start
+```
+
+- If you have made changes to the code, the changes are automatically applied and reflected in the client.
 
 Contributions to the project are welcome, including feature enhancements, bug fixes, and documentation improvements.

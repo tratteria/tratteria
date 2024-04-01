@@ -1,0 +1,38 @@
+<div class="logo-container" [class.logo-small]="hasSearched">
+  <img src="assets/alpha-logo.png" alt="Alpha Stock" class="logo">
+</div>
+
+<div class="search-container" [class.centered]="!hasSearched">
+  <div class="search-wrapper">
+      <i class="fas fa-search search-icon"></i>
+      <input class="search-input" type="text" [(ngModel)]="query" (input)="onSearch($event)" placeholder="Search stocks...">
+  </div>
+</div>
+
+<div class="results-container">
+  <ul class="results-list">
+    <li *ngFor="let searchItem of searchResult" class="result-item"
+        (mouseenter)="isMouseReallyOver($event, searchItemElement) ? searchItemElement.classList.add('hover-effect') : null"
+        (mouseleave)="searchItemElement.classList.remove('hover-effect')"
+        #searchItemElement>
+      <div class="stock-summary" (click)="onSelectStock(searchItem.id)">
+        {{ searchItem.name }} <span class="symbol">{{ searchItem.symbol }}</span>
+      </div>
+      <div class="stock-details" *ngIf="selectedStock && selectedStock.id === searchItem.id">
+        <div class="details-content">
+          <p><strong>Exchange:</strong> {{ selectedStock.exchange }}</p>
+          <p><strong>Current Price:</strong> ${{ selectedStock.currentPrice }}</p>
+          <p><strong>Total Available Shares:</strong> {{ selectedStock.totalAvailableShares }}</p>
+        </div>
+        <div class="button-container">
+          <button class="button buy-button" (click)="onBuyStock(searchItem.id)">
+            <i class="fa fa-shopping-cart"></i> Buy
+          </button>
+          <button class="button sell-button" (click)="onSellStock(searchItem.id)">
+            <i class="fa fa-money-bill-alt"></i> Sell
+          </button>                           
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>
