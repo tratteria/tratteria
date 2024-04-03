@@ -20,5 +20,6 @@ func getEnv(key string) string {
 	if !exists || value == "" {
 		panic(fmt.Sprintf("%s environment variable not set", key))
 	}
+
 	return value
 }
