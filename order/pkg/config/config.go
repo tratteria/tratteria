@@ -5,15 +5,13 @@ import (
 	"os"
 )
 
-type GatewayConfig struct {
+type OrderConfig struct {
 	StocksServiceURL string
-	OrderServiceURL  string
 }
 
-func NewConfig() *GatewayConfig {
-	return &GatewayConfig{
+func NewConfig() *OrderConfig {
+	return &OrderConfig{
 		StocksServiceURL: getEnv("STOCKS_SERVICE_URL"),
-		OrderServiceURL:  getEnv("ORDER_SERVICE_URL"),
 	}
 }
 

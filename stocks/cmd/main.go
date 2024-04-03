@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/handlers"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/handler"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/database"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/service"
 )
@@ -46,9 +46,9 @@ func main() {
 	}
 
 	stockService := service.NewService(db, app.Logger)
-	stockHandlers := handler.NewHandlers(stockService, app.Logger)
+	stockHandler := handler.NewHandlers(stockService, app.Logger)
 
-	app.initializeRoutes(stockHandlers)
+	app.initializeRoutes(stockHandler)
 
 	srv := &http.Server{
 		Handler:      app.Router,
@@ -62,6 +62,8 @@ func main() {
 }
 
 func (a *App) initializeRoutes(handlers *handler.Handlers) {
-	a.Router.HandleFunc("/stocks/search", handlers.SearchStocks).Methods("GET")
-	a.Router.HandleFunc("/stocks/{id}", handlers.GetStockDetails).Methods("GET")
+	a.Router.HandleFunc("/api/stocks/search", handlers.SearchStocksHandler).Methods("GET")
+	a.Router.HandleFunc("/api/stocks/holdings", handlers.GetUserHoldingsHandler).Methods("GET")
+	a.Router.HandleFunc("/api/stocks/{id}", handlers.GetStockDetailsHandler).Methods("GET")
+	a.Router.HandleFunc("/internal/stocks", handlers.UpdateUserStockHandler).Methods("POST")
 }

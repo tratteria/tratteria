@@ -20,14 +20,16 @@ func SetupRoutes(cfg *config.GatewayConfig, logger *zap.Logger) *mux.Router {
 	router := mux.NewRouter()
 
 	stocksProxy := proxy.NewReverseProxy(cfg.StocksServiceURL, logger)
+	orderProxy := proxy.NewReverseProxy(cfg.OrderServiceURL, logger)
 
-	router.PathPrefix("/stocks/").Handler(middleware.Authenticate(stocksProxy, logger))
+	router.PathPrefix("/api/stocks").Handler(middleware.Authenticate(stocksProxy, logger))
+	router.PathPrefix("/api/order").Handler(middleware.Authenticate(orderProxy, logger))
 
-	router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
 		handleLogin(w, r, logger)
 	}).Methods("POST")
 
-	router.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) {
 		handleLogout(w, r, logger)
 	}).Methods("POST")
 
@@ -54,10 +56,10 @@ func handleLogin(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 
 	expiration := time.Now().Add(24 * time.Hour)
 	cookie := http.Cookie{
-		Name:    "session_token",
-		Value:   username,
-		Expires: expiration,
-		Path:    "/",
+		Name:     "session_token",
+		Value:    username,
+		Expires:  expiration,
+		Path:     "/",
 		HttpOnly: true,
 	}
 	http.SetCookie(w, &cookie)
@@ -76,16 +78,16 @@ func handleLogout(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 		}
 
 		http.Error(w, "Unauthorized: Missing or invalid authentication cookie.", http.StatusUnauthorized)
-		
+
 		return
 	}
 
 	expiration := time.Now().Add(-24 * time.Hour)
 	invalidated_cookie := http.Cookie{
-		Name:    "session_token",
-		Value:   "",
-		Expires: expiration,
-		Path:    "/",
+		Name:     "session_token",
+		Value:    "",
+		Expires:  expiration,
+		Path:     "/",
 		HttpOnly: true,
 	}
 
