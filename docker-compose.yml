@@ -6,6 +6,7 @@ services:
       context: ./gateway
     environment:
       - STOCKS_SERVICE_URL=http://stocks:8080
+      - ORDER_SERVICE_URL=http://order:8090
     ports:
       - "8000:8000"
   
@@ -17,5 +18,17 @@ services:
     environment:
       - STOCKS_DB_PATH=/var/lib/stocks-db/stock.db
 
+  order:
+    build:
+      context: ./order
+    volumes:
+      - order-db:/var/lib/order-db
+    environment:
+      - ORDER_DB_PATH=/var/lib/order-db/order.db
+      - STOCKS_SERVICE_URL=http://stocks:8080
+    ports:
+      - "8090:8090"
+
 volumes:
   stocks-db:
+  order-db:
