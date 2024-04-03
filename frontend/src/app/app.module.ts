@@ -11,6 +11,7 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { OrderComponent } from './components/order/order.component';
 import { TransactionDetailsComponent } from './components/order/transaction-details/transaction-details.component';
 import { PortfolioComponent } from './components/portfolio/portfolio.component';
+import { HomeComponent } from './components/home-component/home-component.component';
 
 @NgModule({
   declarations: [
@@ -20,6 +21,7 @@ import { PortfolioComponent } from './components/portfolio/portfolio.component';
     OrderComponent,
     TransactionDetailsComponent,
     PortfolioComponent,
+    HomeComponent,
   ],
   imports: [
     BrowserModule,

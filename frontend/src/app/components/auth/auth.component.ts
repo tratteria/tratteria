@@ -14,9 +14,6 @@ export class AuthComponent {
 
   login(): void {
     this.authService.login(this.username).subscribe({
-      next: () => {
-        this.router.navigate(['/search']);
-      },
       error: (error) => {
         console.error('Login failed', error);
       }

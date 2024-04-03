@@ -6,7 +6,6 @@ const PROXY_CONFIG = [
     target: targetUrl,
     secure: false,
     changeOrigin: true,
-    pathRewrite: { "^/api": "" }
   }
 ];
 

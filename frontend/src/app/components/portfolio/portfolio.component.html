@@ -1,19 +1,35 @@
 <div class="portfolio-page">
   <div class="header">
     <img src="assets/alpha-logo.png" alt="Alpha Logo" class="portfolio-logo" />
-  </div>  
-  <div class="holdings">
-    <div *ngFor="let stock of holdings" class="holding" (click)="toggleStock(stock.stockId)">
+  </div>
+  <div *ngIf="holdings.length > 0; else noHoldings" class="holdings">
+    <div *ngFor="let stock of holdings" class="holding" (click)="toggleStock(stock.stockID)">
       <div class="holding-summary">
         <span class="stock-symbol"><strong>{{ stock.stockSymbol }}</strong></span>
         <span class="stock-quantity">{{ stock.quantity }} shares</span>
         <span class="holding-value">Value: ${{ stock.totalValue | number:'1.2-2' }}</span>
       </div>
-      <div *ngIf="openStates.get(stock.stockId)" class="stock-details">
-        <p><strong>Name:</strong> {{ stock.stockName }}</p>
-        <p><strong>Exchange:</strong> {{ stock.stockExchange }}</p>
-        <p><strong>Current Price:</strong> ${{ stock.currentPrice | number:'1.2-2' }}</p>
+      <div *ngIf="openStates.get(stock.stockID)" class="stock-details">
+        <div class="details-content">
+          <p><strong>Name:</strong> {{ stock.stockName }}</p>
+          <p><strong>Exchange:</strong> {{ stock.stockExchange }}</p>
+          <p><strong>Current Price:</strong> ${{ stock.currentPrice | number:'1.2-2' }}</p>
+          <p><strong>Total Available Shares:</strong> {{ stock.totalAvailableShares }}</p>
+        </div>
+        <div class="button-container">
+          <button class="button buy-button" [disabled]="stock.totalAvailableShares === 0" (click)="onBuyStock(stock.stockID)">
+            <i class="fa fa-shopping-cart"></i> Buy
+          </button>
+          <button class="button sell-button" [disabled]="stock.quantity === 0" (click)="onSellStock(stock.stockID)">
+            <i class="fa fa-money-bill-alt"></i> Sell
+          </button>
+        </div>
       </div>
     </div>
   </div>
+  <ng-template #noHoldings>
+    <div class="no-holdings-message">
+      You do not have any portfolio holdings.
+    </div>
+  </ng-template>
 </div>

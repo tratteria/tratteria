@@ -3,6 +3,7 @@ export interface Stock {
     symbol: string;
     name: string;
     exchange: string;
-    currentPrice: string;
-    totalAvailableShares: string;
+    currentPrice: number;
+    totalAvailableShares: number;
+    holdings: number;
   }

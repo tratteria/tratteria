@@ -193,10 +193,30 @@ a, button {
   background-color: #d32f2f;
 }
 
-.button[disabled] {
-  background-color: #e0e0e0;
-  color: #9e9e9e;
+.sell-button[disabled] {
+  background-color: #F44336;
+  opacity: 0.5;
+  color: #cccccc;
   cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sell-button[disabled]:hover {
+  background-color: #F44336;
+  transform: none;
+}
+
+.buy-button[disabled] {
+  background-color: #45a049;
+  opacity: 0.5;
+  color: #cccccc;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.buy-button[disabled]:hover {
+  background-color: #45a049;
+  transform: none;
 }
   
 @media (max-width: 768px) {

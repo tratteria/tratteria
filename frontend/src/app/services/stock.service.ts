@@ -5,6 +5,7 @@ import { catchError, map } from 'rxjs/operators';
 import { Stock } from '../models/stock.model';
 import { SearchItem } from '../models/search-item.model';
 import { environment } from '../../environments/environment';
+import { HoldingsResponse } from '../models/holdings.model';
 
 @Injectable({
   providedIn: 'root'
@@ -21,11 +22,7 @@ export class StockService {
 
     return this.http.get<{success: boolean, results: SearchItem[]}>(`${this.stockAPIURL}/search`, { params: { query }}).pipe(
       map(response => {
-        if (response.success && response.results) {
           return response.results;
-        }
-        console.error('Received error response from server on stocks search:', response);
-        return [];
       }),
       catchError(error => {
         console.error('Error searching stocks:', error);
@@ -42,6 +39,15 @@ export class StockService {
       catchError(error => {
         console.error('Error fetching stock details:', error);
         return of(null);
+      })
+    );
+  }
+
+  getHoldings(): Observable<HoldingsResponse> {
+    return this.http.get<HoldingsResponse>(`${this.stockAPIURL}/holdings`).pipe(
+      catchError(error => {
+        console.error('Error fetching holdings:', error);
+        return of({totalHoldings: 0, totalValue: 0, holdings: []});
       })
     );
   }

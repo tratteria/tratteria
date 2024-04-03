@@ -25,10 +25,10 @@
           <p><strong>Total Available Shares:</strong> {{ selectedStock.totalAvailableShares }}</p>
         </div>
         <div class="button-container">
-          <button class="button buy-button" (click)="onBuyStock(searchItem.id)">
+          <button class="button buy-button" [disabled]="selectedStock.totalAvailableShares === 0" (click)="onBuyStock(searchItem.id)">
             <i class="fa fa-shopping-cart"></i> Buy
           </button>
-          <button class="button sell-button" (click)="onSellStock(searchItem.id)">
+          <button class="button sell-button" [disabled]="selectedStock.holdings === 0" (click)="onSellStock(searchItem.id)">
             <i class="fa fa-money-bill-alt"></i> Sell
           </button>                           
         </div>
@@ -36,3 +36,4 @@
     </li>
   </ul>
 </div>
+
