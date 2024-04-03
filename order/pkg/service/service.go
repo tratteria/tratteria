@@ -64,12 +64,14 @@ func (s *Service) Order(username string, stockID int, orderType OrderType, quant
 	requestBody, err := json.Marshal(updateRequest)
 	if err != nil {
 		s.Logger.Error("Error marshaling update request to the stocks server for an order request.", zap.Error(err))
+
 		return OrderDetails{}, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/internal/stocks", s.Config.StocksServiceURL), bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/internal/stocks", s.Config.StocksServiceURL), bytes.NewBuffer(requestBody))
 	if err != nil {
 		s.Logger.Error("Error creating request to stocks server.", zap.Error(err))
+
 		return OrderDetails{}, err
 	}
 
@@ -79,29 +81,33 @@ func (s *Service) Order(username string, stockID int, orderType OrderType, quant
 	resp, err := s.HTTPClient.Do(req)
 	if err != nil {
 		s.Logger.Error("Error calling stocks server for user stock update request.", zap.Error(err))
+
 		return OrderDetails{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		s.Logger.Error("Received non-ok status from stocks server for user stock update request.", zap.Int("http-status-code", resp.StatusCode), zap.Any("http-response", resp.Body))
+
 		return OrderDetails{}, errors.New("unexpected response from stock server")
 	}
 
 	var orderDetails OrderDetails
 	err = json.NewDecoder(resp.Body).Decode(&orderDetails)
+
 	if err != nil {
 		s.Logger.Error("Error decoding order details from the response of the stocks server.", zap.Error(err))
+
 		return OrderDetails{}, err
 	}
 
 	transactionID, err := gonanoid.New(10)
 	if err != nil {
 		s.Logger.Error("Transaction id generation failed: %v", zap.Error(err))
-		
+
 		return OrderDetails{}, err
 	}
-	
+
 	orderDetails.TransactionID = transactionID
 	orderDetails.TotalValue = float64(quantity) * orderDetails.StockPrice
 
@@ -114,29 +120,28 @@ func (s *Service) Order(username string, stockID int, orderType OrderType, quant
 	return orderDetails, nil
 }
 
-
 func (s *Service) GetOrderDetails(username string, id string) (OrderDetails, error) {
-    var orderDetails OrderDetails
+	var orderDetails OrderDetails
 
-    query := `SELECT order_id, stock_symbol, stock_name, stock_id, stock_exchange, stock_price, order_type, quantity, total_value FROM order_table WHERE order_id = ? and username = ?`
-    row := s.DB.QueryRow(query, id, username)
+	query := `SELECT order_id, stock_symbol, stock_name, stock_id, stock_exchange, stock_price, order_type, quantity, total_value FROM order_table WHERE order_id = ? and username = ?`
+	row := s.DB.QueryRow(query, id, username)
 
-    var operation string
-    
+	var operation string
+
 	err := row.Scan(&orderDetails.TransactionID, &orderDetails.StockSymbol, &orderDetails.StockName, &orderDetails.StockID, &orderDetails.StockExchange, &orderDetails.StockPrice, &operation, &orderDetails.Quantity, &orderDetails.TotalValue)
-    if err != nil {
-        if err == sql.ErrNoRows {
-            s.Logger.Error("No order found with the given id for the user.", zap.String("order-id", id), zap.String("user-name", username), zap.Error(err))
-            
+	if err != nil {
+		if err == sql.ErrNoRows {
+			s.Logger.Error("No order found with the given id for the user.", zap.String("order-id", id), zap.String("user-name", username), zap.Error(err))
+
 			return OrderDetails{}, ErrOrderNotFound
-        }
-        
+		}
+
 		s.Logger.Error("Error querying order details from the database.", zap.Error(err))
-        
+
 		return OrderDetails{}, err
-    }
+	}
 
-    orderDetails.Operation = OrderType(operation)
+	orderDetails.Operation = OrderType(operation)
 
-    return orderDetails, nil
+	return orderDetails, nil
 }

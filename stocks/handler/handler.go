@@ -209,6 +209,7 @@ func (h *Handlers) UpdateUserStockHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	if err := json.NewEncoder(w).Encode(orderDetails); err != nil {
 		h.Logger.Error("Failed to encode response of a stock-order request.", zap.Error(err))
 
@@ -236,6 +237,7 @@ func (h *Handlers) GetUserHoldingsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	if err := json.NewEncoder(w).Encode(holdings); err != nil {
 		h.Logger.Error("Failed to encode response of a get-user-holdings request.", zap.Error(err))
 

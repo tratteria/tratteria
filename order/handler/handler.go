@@ -58,6 +58,7 @@ func (h *Handlers) OrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	if err := json.NewEncoder(w).Encode(orderDetails); err != nil {
 		h.Logger.Error("Failed to encode response of a stock-order request.", zap.Error(err))
 

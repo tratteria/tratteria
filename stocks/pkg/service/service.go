@@ -134,6 +134,7 @@ func (s *Service) UpdateUserStock(username string, stock StockItem, updateType U
 	tx, err := s.DB.Begin()
 	if err != nil {
 		s.Logger.Error("Failed to start transaction.", zap.Error(err))
+
 		return UpdateDetails{}, fmt.Errorf("failed to start transaction: %w", err)
 	}
 
@@ -144,10 +145,12 @@ func (s *Service) UpdateUserStock(username string, stock StockItem, updateType U
 	err = tx.QueryRow("SELECT quantity FROM user_stocks WHERE username = ? AND stockId = ?", username, stock.Id).Scan(&existingQuantity)
 	if err != nil && err != sql.ErrNoRows {
 		s.Logger.Error("Error querying existing user stock.", zap.Error(err))
+
 		return UpdateDetails{}, fmt.Errorf("error querying existing user stock: %w", err)
 	}
 
 	newQuantity := existingQuantity
+
 	switch updateType {
 	case Buy:
 		newQuantity += quantity
@@ -170,6 +173,7 @@ func (s *Service) UpdateUserStock(username string, stock StockItem, updateType U
 
 	if err != nil {
 		s.Logger.Error("Error updating user stocks.", zap.Error(err))
+
 		return UpdateDetails{}, fmt.Errorf("error updating user stocks: %w", err)
 	}
 
@@ -185,11 +189,13 @@ func (s *Service) UpdateUserStock(username string, stock StockItem, updateType U
 	_, err = tx.Exec(updateStockSQL, updatedAvailable, stock.Id)
 	if err != nil {
 		s.Logger.Error("Error updating total available shares.", zap.Error(err))
+
 		return UpdateDetails{}, fmt.Errorf("error updating total available shares: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
 		s.Logger.Error("Failed to commit transaction.", zap.Error(err))
+
 		return UpdateDetails{}, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -224,6 +230,7 @@ func (s *Service) GetUserHoldings(username string) (Holdings, error) {
 	defer rows.Close()
 
 	var totalValue float64
+
 	for rows.Next() {
 		var holding Holding
 
