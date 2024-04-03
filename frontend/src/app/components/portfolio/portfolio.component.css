@@ -44,7 +44,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
   padding: 10px;
 }
 
@@ -76,10 +75,105 @@
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.details-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
 }
 
 .stock-details p {
-  margin: 10px 5px;
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.95em;
+  padding: 5px;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.button {
+  padding: 10px 60px;
+  font-size: 1em;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  cursor: pointer;
+  width: fit-content;
+  text-align: center;
+  margin-bottom: 10px;
+  box-shadow: none;
+  transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+
+.button:last-child {
+  margin-bottom: 0;
+}
+
+.button:hover {
+  transform: scale(1.1);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.buy-button {
+  background-color: #4CAF50;
+}
+
+.buy-button:hover, .buy-button:active {
+  background-color: #45a049;
+}
+
+.sell-button {
+  background-color: #F44336;
+}
+
+.sell-button:hover, .sell-button:active {
+  background-color: #d32f2f;
+}
+
+.sell-button[disabled] {
+  background-color: #F44336;
+  opacity: 0.5;
+  color: #cccccc;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sell-button[disabled]:hover {
+  background-color: #F44336;
+  transform: none;
+}
+
+.buy-button[disabled] {
+  background-color: #45a049;
+  opacity: 0.5;
+  color: #cccccc;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.buy-button[disabled]:hover {
+  background-color: #45a049;
+  transform: none;
+}
+
+.no-holdings-message {
+  padding: 20px;
+  text-align: center;
+  color: #666;
 }
 
 @media (max-width: 600px) {

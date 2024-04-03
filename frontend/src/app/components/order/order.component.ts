@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { StockService } from '../../services/stock.service';
 import { Stock } from '../../models/stock.model';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-order',
@@ -11,12 +12,14 @@ import { Stock } from '../../models/stock.model';
 export class OrderComponent implements OnInit {
   action: string = '';
   quantity: number = 1;
+  maxQuantity: number = 100;
   total: number = 0;
   stock: Stock | null = null;
 
   constructor(
     private activatedRoute: ActivatedRoute,
     private stockService: StockService,
+    private orderService: OrderService,
     private router: Router,
   ) { }
 
@@ -27,7 +30,12 @@ export class OrderComponent implements OnInit {
       if (action && stockId) {
         this.action = action;
         this.stockService.getStockDetails(stockId).subscribe(stockDetails => {
+          if (!stockDetails) {
+            console.error('Stock details not found for ID:', stockId);
+            return;
+          }
           this.stock = stockDetails;
+          this.maxQuantity = this.action === 'Buy' ? this.stock.totalAvailableShares : this.stock.holdings;
           this.calculateTotal();
         });
       }
@@ -36,8 +44,7 @@ export class OrderComponent implements OnInit {
 
   calculateTotal(): void {
     if (this.stock) {
-      const pricePerShare = parseFloat(this.stock.currentPrice);
-      this.total = pricePerShare * this.quantity;
+      this.total = this.stock.currentPrice * this.quantity;
     }
   }
 
@@ -45,6 +52,11 @@ export class OrderComponent implements OnInit {
     if (event.target.value < 0 || event.target.value == 0) {
       event.target.value = '';
       this.quantity = 1
+      this.calculateTotal()
+    }
+    if (event.target.value > this.maxQuantity) {
+      event.target.value = this.maxQuantity;
+      this.quantity = this.maxQuantity
       this.calculateTotal()
     }
   }
@@ -56,8 +68,15 @@ export class OrderComponent implements OnInit {
   }
   
   placeOrder(): void {
-    const mockTransactionId = Date.now();
-
-    this.router.navigate(['/order/transaction'], { queryParams: { transaction_id: mockTransactionId } });
+    if (this.stock && this.stock.id && this.action) {
+      this.orderService.placeOrder(this.stock.id, this.action, this.quantity).subscribe({
+        next: (response) => {
+          this.router.navigate(['/order/transaction'], { queryParams: { transaction_id: response.transactionID } });
+        },
+        error: (error) => {
+          console.error('Error placing order:', error);
+        }
+      });
+    }
   }
 }

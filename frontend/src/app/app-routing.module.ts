@@ -6,15 +6,15 @@ import { OrderComponent } from './components/order/order.component';
 import { AuthGuard } from './guards/auth.guard';
 import { TransactionDetailsComponent } from './components/order/transaction-details/transaction-details.component';
 import { PortfolioComponent } from './components/portfolio/portfolio.component';
+import { HomeComponent } from './components/home-component/home-component.component';
+
 
 const routes: Routes = [
-  { path: '', redirectTo: '/auth', pathMatch: 'full' },
-  { path: 'auth', component: AuthComponent },
-  { path: 'search', component: SearchComponent, canActivate: [AuthGuard] },
+  { path: '', component: HomeComponent},
   { path: 'order', component: OrderComponent, canActivate: [AuthGuard] },
   { path: 'order/transaction', component: TransactionDetailsComponent, canActivate: [AuthGuard] },
   { path: 'portfolio', component: PortfolioComponent, canActivate: [AuthGuard] },
-  { path: '**', redirectTo: '/auth' }
+  { path: '**', redirectTo: '' }
 ];
 
 @NgModule({

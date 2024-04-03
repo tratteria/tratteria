@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
+import { StockService } from '../../services/stock.service';
+import { Holding } from '../../models/holdings.model'
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-portfolio',
@@ -8,52 +11,46 @@ import { AuthService } from '../../services/auth.service';
 })
 export class PortfolioComponent implements OnInit {
   username: string = '';
-  selectedStock: any = null;
+  selectedStock: Holding | null = null;
   openStates: Map<string, boolean> = new Map();
+  holdings: Holding[] = [];
 
-
-  holdings = [
-    {
-      "stockSymbol": "AAPL",
-      "stockName": "Apple Inc.",
-      "stockExchange": "NASDAQ",
-      "stockId": "8F264O24",
-      "quantity": 500000,
-      "currentPrice": 150.30,
-      "totalValue": 750905.00
-    },
-    {
-      "stockSymbol": "TSLA",
-      "stockName": "Tesla, Inc.",
-      "stockExchange": "NASDAQ",
-      "stockId": "HA266D40",
-      "quantity": 20,
-      "currentPrice": 720.50,
-      "totalValue": 14410.00
-    }
-  ];
-
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private stockService: StockService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.authService.getCurrentUser().subscribe(user => {
       this.username = user.username;
-    });
-    this.holdings.forEach(holding => {
-      this.openStates.set(holding.stockId, false);
+      this.fetchHoldings();
     });
   }
 
-  onSelectStock(stock: any): void {
-    if (this.selectedStock && this.selectedStock.stockId === stock.stockId) {
-      this.selectedStock = null;
-    } else {
-      this.selectedStock = stock;
-    }
+  fetchHoldings(): void {
+    this.stockService.getHoldings().subscribe(response => {
+      if (response && response.holdings) {
+        this.holdings = response.holdings;
+        response.holdings.forEach(holding => {
+          this.openStates.set(holding.stockID, false);
+        });
+      } else {
+        this.holdings = [];
+      }
+    });
   }
 
-  toggleStock(stockId: string): void {
-    const isOpen = this.openStates.get(stockId) || false;
-    this.openStates.set(stockId, !isOpen);
+  toggleStock(stockID: string): void {
+    const isOpen = this.openStates.get(stockID) || false;
+    this.openStates.set(stockID, !isOpen);
+  }
+
+  onBuyStock(stockId: string): void {
+    this.router.navigate(['/order'], { queryParams: { action: 'Buy', stockId: stockId } });
+  }
+  
+  onSellStock(stockId: string): void {
+    this.router.navigate(['/order'], { queryParams: { action: 'Sell', stockId: stockId } });
   }
 }
