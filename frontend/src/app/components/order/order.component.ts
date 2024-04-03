@@ -12,7 +12,7 @@ import { OrderService } from '../../services/order.service';
 export class OrderComponent implements OnInit {
   action: string = '';
   quantity: number = 1;
-  maxQuantity: number = 100;
+  maxQuantity: number = 0;
   total: number = 0;
   stock: Stock | null = null;
 
