@@ -27,12 +27,12 @@ func main() {
 	router := handler.SetupRoutes(cfg, logger)
 
 	srv := &http.Server{
-		Addr:         "0.0.0.0:8000",
+		Addr:         "0.0.0.0:30000",
 		Handler:      router,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logger.Info("Starting server on 8000.")
+	logger.Info("Starting server on 30000.")
 	log.Fatal(srv.ListenAndServe())
 }

@@ -1,4 +1,4 @@
-const targetUrl = 'http://localhost:8000';
+const targetUrl = 'http://localhost:30000';
 
 const PROXY_CONFIG = [
   {

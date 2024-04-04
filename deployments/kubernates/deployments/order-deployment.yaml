@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: order
+  name: order
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: order
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/docker-compose-default: "true"
+        io.kompose.service: order
+    spec:
+      containers:
+        - env:
+            - name: ORDER_DB_PATH
+              value: /var/lib/order-db/order.db
+            - name: STOCKS_SERVICE_URL
+              value: http://stocks:8080
+          image: order
+          name: order
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8090
+              hostPort: 8090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/order-db
+              name: order-db
+      restartPolicy: Always
+      volumes:
+        - name: order-db
+          persistentVolumeClaim:
+            claimName: order-db
