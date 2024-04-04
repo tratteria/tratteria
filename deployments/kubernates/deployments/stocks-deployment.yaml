@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: stocks
+  name: stocks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: stocks
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/docker-compose-default: "true"
+        io.kompose.service: stocks
+    spec:
+      containers:
+        - env:
+            - name: STOCKS_DB_PATH
+              value: /var/lib/stocks-db/stock.db
+          image: stocks
+          name: stocks
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+              hostPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/stocks-db
+              name: stocks-db
+      restartPolicy: Always
+      volumes:
+        - name: stocks-db
+          persistentVolumeClaim:
+            claimName: stocks-db
