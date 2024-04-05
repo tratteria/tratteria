@@ -22,9 +22,11 @@ func main() {
 		}
 	}()
 
-	cfg := config.NewConfig()
+	gatewayConfig := config.GetGatewayConfig()
+	oauth2Config := config.GetOauth2Config()
+	oidcProvider := config.GetOIDCProvider(logger)
 
-	router := handler.SetupRoutes(cfg, logger)
+	router := handler.SetupRoutes(gatewayConfig, logger, oauth2Config, oidcProvider)
 
 	srv := &http.Server{
 		Addr:         "0.0.0.0:30000",

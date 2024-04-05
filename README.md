@@ -6,12 +6,9 @@ TraTs-Demo-Svcs is a collection of sample services designed to demonstrate the e
 
 ### Backend
 
-You can either use Kubernetes or Docker Compose for the deployment. 
-
-#### Using Kubernates
 Ensure Kubernetes is installed and correctly configured on your machine before executing these commands. 
 
-- Navigate to the deployments/kubernates directory and run:
+- Navigate to the deployments/kubernetes directory and run:
 
 ```bash
 ./deploy.sh
@@ -25,29 +22,9 @@ Ensure Kubernetes is installed and correctly configured on your machine before e
 
 - If you have made changes to the code, you can re-execute `./deploy.sh` to apply those changes.
 
+### OIDC Authentication via Dex
 
-
-#### Using Docker Compose
-
-Ensure Docker is installed and running on your machine before executing these commands. 
-
-- Navigate to the deployments/docker-compose directory and execute:
-
-```bash
-docker compose up
-```
-
-- To remove the generated resources, use:
-
-```bash
-docker compose down
-```
-
-- If you have made changes to the code and wish to launch the latest version, rebuild the images and containers using:
-
-```bash
-docker compose up --build
-```
+The application uses Dex as its OIDC provider, configured at `deployment/kubernetes/configs/dex-config.yaml`. If you need to add clients, update secrets, or manage users, please update this file as necessary.
 
 ### Client(Frontend)
 

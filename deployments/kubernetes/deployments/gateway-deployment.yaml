@@ -27,6 +27,16 @@ spec:
               value: http://order:8090
             - name: STOCKS_SERVICE_URL
               value: http://stocks:8080
+            - name: OAUTH2_CLIENT_ID
+              value: alpha-stocks-client
+            - name: OAUTH2_CLIENT_SECRET
+              value: MV9zf+XnZvs/nJy4Z+ya7A==
+            - name: OAUTH2_REDIRECT_URL
+              value: http://localhost:4200/callback
+            - name: OAUTH2_TOKEN_URL
+              value: http://dex:5556/dex/token
+            - name: OIDC_ISSUER_URL
+              value: http://dex:5556/dex
           image: gateway
           name: gateway
           imagePullPolicy: Never
