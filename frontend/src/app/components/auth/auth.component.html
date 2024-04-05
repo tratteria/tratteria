@@ -1,13 +1,12 @@
 <div class="auth-container">
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-spinner"></div>
+  </div>
   <div class="auth-box">
     <img src="assets/alpha-logo.png" alt="Alpha Logo" class="auth-logo" />
-    <div class="input-wrapper">
-      <i class="fas fa-user auth-icon"></i>
-      <input class="auth-input" type="text" [(ngModel)]="username" placeholder="Username">
-    </div>
     <div class="button-wrapper">
       <button class="auth-button" (click)="login()">
-        Login <i class="fas fa-arrow-right"></i>
+        Log in With Dex<i class="fas fa-arrow-right"></i>
       </button>
     </div>
   </div>

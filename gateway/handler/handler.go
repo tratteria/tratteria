@@ -8,15 +8,23 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/gateway/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/gateway/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/gateway/pkg/proxy"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/gateway/pkg/sessionmanager"
+
+	"github.com/coreos/go-oidc"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 )
 
-type LoginRequest struct {
-	Username string `json:"username"`
+type DexCodeExchangeRequest struct {
+	Code string `json:"code"`
 }
 
-func SetupRoutes(cfg *config.GatewayConfig, logger *zap.Logger) *mux.Router {
+type IDTokenClaims struct {
+	Email string `json:"email"`
+}
+
+func SetupRoutes(cfg *config.GatewayConfig, logger *zap.Logger, oauth2Config oauth2.Config, oidcProvider *oidc.Provider) *mux.Router {
 	router := mux.NewRouter()
 
 	stocksProxy := proxy.NewReverseProxy(cfg.StocksServiceURL, logger)
@@ -25,66 +33,34 @@ func SetupRoutes(cfg *config.GatewayConfig, logger *zap.Logger) *mux.Router {
 	router.PathPrefix("/api/stocks").Handler(middleware.Authenticate(stocksProxy, logger))
 	router.PathPrefix("/api/order").Handler(middleware.Authenticate(orderProxy, logger))
 
-	router.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
-		handleLogin(w, r, logger)
-	}).Methods("POST")
-
 	router.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) {
 		handleLogout(w, r, logger)
+	}).Methods("POST")
+
+	router.HandleFunc("/api/exchange-code", func(w http.ResponseWriter, r *http.Request) {
+		handleOidcCodeExchange(w, r, logger, oauth2Config, oidcProvider)
 	}).Methods("POST")
 
 	return router
 }
 
-func handleLogin(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
-	var loginRequest LoginRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-
-		logger.Error("Unable to parse a login request.", zap.Error(err))
-		return
-	}
-
-	username := loginRequest.Username
-	if username == "" {
-		http.Error(w, "Username is required", http.StatusBadRequest)
-
-		logger.Error("Username is missing in a login request.")
-		return
-	}
-
-	expiration := time.Now().Add(24 * time.Hour)
-	cookie := http.Cookie{
-		Name:     "session_token",
-		Value:    username,
-		Expires:  expiration,
-		Path:     "/",
-		HttpOnly: true,
-	}
-	http.SetCookie(w, &cookie)
-
-	logger.Info("User logged in", zap.String("username", username))
-	w.WriteHeader(http.StatusOK)
-}
-
 func handleLogout(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
-	cookie, err := r.Cookie("session_token")
+	cookie, err := r.Cookie("session_id")
 	if err != nil || cookie.Value == "" {
 		if err != nil {
-			logger.Error("Failed to retrieve session_token cookie", zap.Error(err))
+			logger.Error("Failed to retrieve session_id cookie", zap.Error(err))
 		} else {
-			logger.Error("session_token cookie is not present")
+			logger.Error("session_id cookie is not present")
 		}
+	}
 
-		http.Error(w, "Unauthorized: Missing or invalid authentication cookie.", http.StatusUnauthorized)
-
-		return
+	if err == nil && cookie.Value != "" {
+		sessionmanager.DeleteSession(cookie.Value)
 	}
 
 	expiration := time.Now().Add(-24 * time.Hour)
 	invalidated_cookie := http.Cookie{
-		Name:     "session_token",
+		Name:     "session_id",
 		Value:    "",
 		Expires:  expiration,
 		Path:     "/",
@@ -93,6 +69,78 @@ func handleLogout(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 
 	http.SetCookie(w, &invalidated_cookie)
 
-	logger.Info("User logged out", zap.String("username", cookie.Value))
+	logger.Info("User logged out", zap.String("email", cookie.Value))
+	
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.Logger, oauth2Config oauth2.Config, oidcProvider *oidc.Provider) {
+	var dexCodeExchangeRequest DexCodeExchangeRequest
+	if err := json.NewDecoder(r.Body).Decode(&dexCodeExchangeRequest); err != nil {
+		logger.Error("Invalid to OIDC code exchange request.", zap.Error(err))
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		
+		return
+	}
+
+	ctx := r.Context()
+
+	oauth2Token, err := oauth2Config.Exchange(ctx, dexCodeExchangeRequest.Code)
+	if err != nil {
+		logger.Error("Failed to exchange the authorization code for a token.", zap.Error(err))
+		http.Error(w, "Failed to exchange the authorization code for a token", http.StatusInternalServerError)
+		
+		return
+	}
+
+	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
+	if !ok {
+		logger.Error("ID Token not found in the OAuth2Token.")
+		http.Error(w, "ID Token not found", http.StatusInternalServerError)
+		
+		return
+	}
+
+	oidcConfig := &oidc.Config{
+		ClientID: oauth2Config.ClientID,
+	}
+	verifier := oidcProvider.Verifier(oidcConfig)
+	
+	idToken, err := verifier.Verify(ctx, rawIDToken)
+	if err != nil {
+		logger.Error("Failed to verify OIDC ID token.", zap.Error(err))
+		http.Error(w, "Failed to verify ID token", http.StatusInternalServerError)
+
+		return
+	}
+
+	var claims IDTokenClaims
+	
+	if err := idToken.Claims(&claims); err != nil {
+		logger.Error("Failed to parse OIDC ID token claims.", zap.Error(err))
+		http.Error(w, "Failed to parse ID token claims", http.StatusInternalServerError)
+		
+		return
+	}
+
+	logger.Info("OIDC ID Token verified successfully.", zap.String("email", claims.Email))
+
+	expiration := time.Now().Add(24 * time.Hour)
+	userSession := sessionmanager.UserSession{
+		Email:   claims.Email,
+		Expires: expiration,
+	}
+
+	sessionID := sessionmanager.SaveSession(userSession)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID,
+		Expires:  expiration,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	logger.Info("User session created", zap.String("email", claims.Email))
 	w.WriteHeader(http.StatusOK)
 }

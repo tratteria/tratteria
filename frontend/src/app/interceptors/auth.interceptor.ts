@@ -22,8 +22,18 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
-          this.authService.logout();
-          this.router.navigate(['/login']);
+          console.log('Unauthorized response received from the server. Logging user out...');
+          
+          this.authService.logout().subscribe({
+            next: () => {
+              console.log('Logout process completed');
+              this.router.navigate(['']);
+            },
+            error: (err) => {
+              console.error('Error logging user out:', err);
+              this.router.navigate(['']);
+            }
+          });
         }
         return throwError(error);
       })

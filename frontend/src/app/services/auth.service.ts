@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, tap, Observable, throwError, of } from 'rxjs';
+import { BehaviorSubject, catchError, tap, Observable, throwError} from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -8,9 +8,10 @@ import { environment } from '../../environments/environment';
 })
 export class AuthService {
   
-  private loginAPIURL = environment.loginAPIURL;
   private logoutAPIURL = environment.logoutAPIURL;
-  
+  private tokenExchangeAPIURL = environment.codeExchangeAPIURL;
+  private dexHostURL = environment.dexHostURL
+  private dexClientId = environment.dexClientId
   private isAuthenticated = new BehaviorSubject<boolean>(this.isLoggedIn());
 
   constructor(private http: HttpClient) { }
@@ -19,22 +20,13 @@ export class AuthService {
     return this.isAuthenticated.asObservable();
   }
 
-  login(username: string): Observable<any> {
-    return this.http.post<any>(this.loginAPIURL, { username }).pipe(
-      tap(() => {
-        console.log('Login successful');
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('username', username);
-        this.isAuthenticated.next(true);
-      }),
-      catchError(error => {
-        console.error('Login failed', error.message);
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('username');
-        this.isAuthenticated.next(false);
-        return throwError(() => new Error('Login failed. Please try again later.'));
-      })
-    );
+  loginWithDex(): void {
+    const clientId = this.dexClientId;
+    const redirectUri = encodeURIComponent(window.location.origin + '/callback');
+    const responseType = 'code';
+    const scope = encodeURIComponent('openid profile email');
+
+    window.location.href = `${this.dexHostURL}/dex/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}`;
   }
 
   logout(): Observable<any> {
@@ -42,7 +34,6 @@ export class AuthService {
       tap(() => {
         console.log('Logout successful');
         localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('username');
         this.isAuthenticated.next(false);
       }),
       catchError(error => {
@@ -51,13 +42,24 @@ export class AuthService {
       })
     );
   }
-  
-  isLoggedIn(): boolean {
-    return localStorage.getItem('isLoggedIn') === 'true';
+
+  exchangeCode(code: string): Observable<any> {
+    return this.http.post<any>(this.tokenExchangeAPIURL, { code }).pipe(
+      tap(() => {
+        console.log('Code exchange successful.');
+        localStorage.setItem('isLoggedIn', 'true');
+        this.isAuthenticated.next(true);
+      }),
+      catchError(error => {
+        console.error('Code exchange failed:', error.message);
+        localStorage.removeItem('isLoggedIn');
+        this.isAuthenticated.next(false);
+        return throwError(() => new Error('Code exchange failed. Please try again later.'));
+      })
+    );
   }
 
-  getCurrentUser(): Observable<{ username: string }> {
-    const username = localStorage.getItem('username') || 'Unknown';
-    return of({ username });
+  isLoggedIn(): boolean {
+    return localStorage.getItem('isLoggedIn') === 'true';
   }
 }

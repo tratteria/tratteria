@@ -7,6 +7,9 @@ docker build -t stocks:latest -f ../../stocks/Dockerfile ../../stocks
 # Building Order Image
 docker build -t order:latest -f ../../order/Dockerfile ../../order
 
+
+kubectl create configmap dex-config --from-file=configs/dex-config.yaml
+
 # Applying the Configuration
 kubectl apply -f deployments/
 kubectl apply -f services/

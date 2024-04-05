@@ -22,10 +22,7 @@ export class PortfolioComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.authService.getCurrentUser().subscribe(user => {
-      this.username = user.username;
-      this.fetchHoldings();
-    });
+    this.fetchHoldings();
   }
 
   fetchHoldings(): void {
