@@ -3,6 +3,7 @@ package sessionmanager
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"sync"
 	"time"
 )
@@ -19,8 +20,10 @@ var (
 
 func generateSessionID() string {
 	b := make([]byte, 16)
-	rand.Read(b)
-	
+	if _, err := rand.Read(b); err != nil {
+		log.Fatal(err)
+	}
+
 	return hex.EncodeToString(b)
 }
 
@@ -29,7 +32,7 @@ func SaveSession(sessionData UserSession) string {
 	storeLock.Lock()
 	defer storeLock.Unlock()
 	sessionStore[sessionID] = sessionData
-	
+
 	return sessionID
 }
 
@@ -37,7 +40,7 @@ func GetSession(sessionID string) (UserSession, bool) {
 	storeLock.RLock()
 	defer storeLock.RUnlock()
 	sessionData, exists := sessionStore[sessionID]
-	
+
 	return sessionData, exists
 }
 
