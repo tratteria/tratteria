@@ -13,7 +13,7 @@ staticClients:
   redirectURIs:
   - 'http://localhost:4200/callback'
   name: 'Alpha Stocks'
-  secret: MV9zf+XnZvs/nJy4Z+ya7A==
+  secret: MV9zf+XnZvs/nJy4Z+ya7A== # Replace this value for your installation
 
 enablePasswordDB: true
 staticPasswords:

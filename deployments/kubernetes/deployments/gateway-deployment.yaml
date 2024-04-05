@@ -30,7 +30,7 @@ spec:
             - name: OAUTH2_CLIENT_ID
               value: alpha-stocks-client
             - name: OAUTH2_CLIENT_SECRET
-              value: MV9zf+XnZvs/nJy4Z+ya7A==
+              value: MV9zf+XnZvs/nJy4Z+ya7A== # Replace this value for your installation
             - name: OAUTH2_REDIRECT_URL
               value: http://localhost:4200/callback
             - name: OAUTH2_TOKEN_URL
