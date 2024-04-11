@@ -48,31 +48,16 @@
 }
 
 .auth-button {
-  padding: 12px 20px;
-
-  flex-basis: 48%;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  background-color: #7a42f4;
-  color: white;
-  transition: box-shadow 0.3s ease, transform 0.2s;
-}
-
-.back-button {
   font-size: 0.95em;
+  font-weight: 600;
+  padding-top: 12px;
+  padding-bottom: 12px;
   border: none;
-  outline: none;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
   background-color: #7a42f4;
   color: white;
-  text-align: center;
-  margin-top: 30px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease, transform 0.2s;
 }
 
 .auth-button:hover {
