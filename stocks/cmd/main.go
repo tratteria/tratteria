@@ -7,17 +7,22 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/handler"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/database"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/service"
 )
 
 type App struct {
-	Router *mux.Router
-	DB     *sql.DB
-	Logger *zap.Logger
+	Router         *mux.Router
+	DB             *sql.DB
+	Config         *config.StocksConfig
+	SpireJwtSource *workloadapi.JWTSource
+	Logger         *zap.Logger
 }
 
 func main() {
@@ -39,25 +44,37 @@ func main() {
 
 	defer db.Close()
 
+	stocksConfig := config.GetStocksConfig()
+
+	spireJwtSource := config.GetSpireJwtSource(logger)
+
+	defer spireJwtSource.Close()
+
 	app := &App{
-		Router: mux.NewRouter(),
-		DB:     db,
-		Logger: logger,
+		Router:         mux.NewRouter(),
+		DB:             db,
+		Config:         stocksConfig,
+		SpireJwtSource: spireJwtSource,
+		Logger:         logger,
 	}
 
-	stockService := service.NewService(db, app.Logger)
+	middleware := middleware.GetMiddleware(stocksConfig, app.SpireJwtSource, app.Logger)
+
+	app.Router.Use(middleware)
+
+	stockService := service.NewService(app.DB, app.Logger)
 	stockHandler := handler.NewHandlers(stockService, app.Logger)
 
 	app.initializeRoutes(stockHandler)
 
 	srv := &http.Server{
 		Handler:      app.Router,
-		Addr:         "0.0.0.0:8080",
+		Addr:         "0.0.0.0:8070",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logger.Info("Starting server on 8080.")
+	logger.Info("Starting server on 8070.")
 	log.Fatal(srv.ListenAndServe())
 }
 

@@ -4,7 +4,7 @@ TraTs-Demo-Svcs is a collection of sample services designed to demonstrate the e
 
 ## How to Run
 
-### Backend
+## Backend
 
 Ensure Kubernetes is installed and correctly configured on your machine before executing these commands. 
 
@@ -26,7 +26,12 @@ Ensure Kubernetes is installed and correctly configured on your machine before e
 
 The application uses Dex as its OIDC provider, configured at `deployment/kubernetes/configs/dex-config.yaml`. If you need to add clients, update secrets, or manage users, please update this file as necessary.
 
-### Client(Frontend)
+### SPIRE Identity Management
+
+The application incorporates SPIRE(the SPIFFE Runtime Environment) for workload identity management, with configurations located at `deployment/kubernates/spire/`. To adjust service identities, modify configurations, or manage workload registrations, please refer to and update the appropriate files within the directory.
+
+
+## Client(Frontend)
 
 - To start the client, navigate to the frontend directory and run:
 

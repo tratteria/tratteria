@@ -7,10 +7,11 @@ metadata:
   labels:
     io.kompose.service: stocks
   name: stocks
+  namespace: alpha-stocks-dev
 spec:
   ports:
-    - name: "8080"
-      port: 8080
-      targetPort: 8080
+    - name: "8070"
+      port: 8070
+      targetPort: 8070
   selector:
     io.kompose.service: stocks

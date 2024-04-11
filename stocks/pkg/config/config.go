@@ -16,14 +16,12 @@ type spiffeIDs struct {
 	Stocks  spiffeid.ID
 }
 
-type OrderConfig struct {
-	StocksServiceURL string
-	SpiffeIDs        *spiffeIDs
+type StocksConfig struct {
+	SpiffeIDs *spiffeIDs
 }
 
-func GetOrderConfig() *OrderConfig {
-	return &OrderConfig{
-		StocksServiceURL: getEnv("STOCKS_SERVICE_URL"),
+func GetStocksConfig() *StocksConfig {
+	return &StocksConfig{
 		SpiffeIDs: &spiffeIDs{
 			Gateway: spiffeid.RequireFromString(getEnv("GATEWAY_SERVICE_SPIFFE_ID")),
 			Order:   spiffeid.RequireFromString(getEnv("ORDER_SERVICE_SPIFFE_ID")),

@@ -1,6 +1,13 @@
-kubectl delete configmap dex-config
+# Destroying Alpha Stock Resources
+echo "\nDestroying Alpha Stock Resources...\n"
 
-# Destroying the Configuration
-kubectl delete -f deployments/
-kubectl delete -f services/
-kubectl delete -f volumes/
+cd alpha-stocks
+./destroy.sh
+cd ..
+
+# Destroying Spire Resources
+echo "\n\n\nDestroying Spire Resources...\n"
+
+cd spire
+./destroy.sh
+cd ..

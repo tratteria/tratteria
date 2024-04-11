@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: dex
+  namespace: alpha-stocks-dev
 spec:
   type: NodePort
   ports:
