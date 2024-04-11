@@ -2,30 +2,36 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/config"
-	"github.com/matoous/go-nanoid/v2"
+	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
+	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 )
 
 type Service struct {
-	DB         *sql.DB
-	Logger     *zap.Logger
-	HTTPClient *http.Client
-	Config     *config.OrderConfig
+	DB             *sql.DB
+	HTTPClient     *http.Client
+	Config         *config.OrderConfig
+	SpireJwtSource *workloadapi.JWTSource
+	Logger         *zap.Logger
 }
 
-func NewService(db *sql.DB, logger *zap.Logger, httpClient *http.Client, config *config.OrderConfig) *Service {
+func NewService(db *sql.DB, httpClient *http.Client, config *config.OrderConfig, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) *Service {
 	return &Service{
-		DB:         db,
-		Logger:     logger,
-		HTTPClient: httpClient,
-		Config:     config,
+		DB:             db,
+		HTTPClient:     httpClient,
+		Config:         config,
+		SpireJwtSource: spireJwtSource,
+		Logger:         logger,
 	}
 }
 
@@ -77,6 +83,20 @@ func (s *Service) Order(username string, stockID int, orderType OrderType, quant
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-user-name", username)
+
+	ctx, cancel := context.WithTimeout(req.Context(), 5*time.Second)
+	defer cancel()
+
+	svid, err := s.SpireJwtSource.FetchJWTSVID(ctx, jwtsvid.Params{
+		Audience: s.Config.SpiffeIDs.Stocks.String(),
+	})
+	if err != nil {
+		s.Logger.Error("Failed to fetch JWT-SVID.", zap.Error(err))
+
+		return OrderDetails{}, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+svid.Marshal())
 
 	resp, err := s.HTTPClient.Do(req)
 	if err != nil {

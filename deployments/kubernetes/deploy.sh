@@ -1,16 +1,13 @@
-# Building Gateway Image
-docker build -t gateway:latest -f ../../gateway/Dockerfile ../../gateway
+# Deploying Spire
+echo "\nDeploying Spire...\n"
 
-# Building Stocks Image
-docker build -t stocks:latest -f ../../stocks/Dockerfile ../../stocks
+cd spire
+./deploy.sh
+cd ..
 
-# Building Order Image
-docker build -t order:latest -f ../../order/Dockerfile ../../order
+# Deploying Alpha Stocks
+echo "\nDeploying Alpha Stocks...\n"
 
-
-kubectl create configmap dex-config --from-file=configs/dex-config.yaml
-
-# Applying the Configuration
-kubectl apply -f deployments/
-kubectl apply -f services/
-kubectl apply -f volumes/
+cd alpha-stocks
+./deploy.sh
+cd ..

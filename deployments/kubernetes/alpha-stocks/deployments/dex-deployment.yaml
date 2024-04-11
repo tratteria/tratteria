@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dex
+  namespace: alpha-stocks-dev
 spec:
   replicas: 1
   selector:
@@ -14,7 +15,7 @@ spec:
     spec:
       containers:
       - name: dex
-        image: dexidp/dex:v2.31.0
+        image: dexidp/dex:v2.39.0
         command: ["/usr/local/bin/dex"]
         args: ["serve", "/etc/dex/dex-config.yaml"]
         ports:

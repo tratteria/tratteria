@@ -7,20 +7,23 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/handler"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/database"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/service"
 )
 
 type App struct {
-	Router     *mux.Router
-	DB         *sql.DB
-	Logger     *zap.Logger
-	HTTPClient *http.Client
-	Config     *config.OrderConfig
+	Router         *mux.Router
+	DB             *sql.DB
+	HTTPClient     *http.Client
+	Config         *config.OrderConfig
+	SpireJwtSource *workloadapi.JWTSource
+	Logger         *zap.Logger
 }
 
 func main() {
@@ -42,17 +45,26 @@ func main() {
 
 	defer db.Close()
 
-	cfg := config.NewConfig()
+	orderConfig := config.GetOrderConfig()
+
+	spireJwtSource := config.GetSpireJwtSource(logger)
+
+	defer spireJwtSource.Close()
 
 	app := &App{
-		Router:     mux.NewRouter(),
-		DB:         db,
-		Logger:     logger,
-		HTTPClient: &http.Client{},
-		Config:     cfg,
+		Router:         mux.NewRouter(),
+		DB:             db,
+		HTTPClient:     &http.Client{},
+		Config:         orderConfig,
+		SpireJwtSource: spireJwtSource,
+		Logger:         logger,
 	}
 
-	orderService := service.NewService(db, app.Logger, app.HTTPClient, app.Config)
+	middleware := middleware.GetMiddleware(app.Config, app.SpireJwtSource, app.Logger)
+
+	app.Router.Use(middleware)
+
+	orderService := service.NewService(app.DB, app.HTTPClient, app.Config, app.SpireJwtSource, app.Logger)
 	orderHandler := handler.NewHandlers(orderService, app.Logger)
 
 	app.initializeRoutes(orderHandler)

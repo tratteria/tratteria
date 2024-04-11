@@ -9,6 +9,7 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/gateway/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/gateway/pkg/proxy"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/gateway/pkg/sessionmanager"
+	"github.com/spiffe/go-spiffe/v2/workloadapi"
 
 	"github.com/coreos/go-oidc"
 	"github.com/gorilla/mux"
@@ -24,14 +25,14 @@ type IDTokenClaims struct {
 	Email string `json:"email"`
 }
 
-func SetupRoutes(cfg *config.GatewayConfig, logger *zap.Logger, oauth2Config oauth2.Config, oidcProvider *oidc.Provider) *mux.Router {
+func SetupRoutes(cfg *config.GatewayConfig, oauth2Config oauth2.Config, oidcProvider *oidc.Provider, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) *mux.Router {
 	router := mux.NewRouter()
 
 	stocksProxy := proxy.NewReverseProxy(cfg.StocksServiceURL, logger)
 	orderProxy := proxy.NewReverseProxy(cfg.OrderServiceURL, logger)
 
-	router.PathPrefix("/api/stocks").Handler(middleware.Authenticate(stocksProxy, logger))
-	router.PathPrefix("/api/order").Handler(middleware.Authenticate(orderProxy, logger))
+	router.PathPrefix("/api/stocks").Handler(middleware.GatewayMiddleware(stocksProxy, cfg.SpiffeIDs.Stocks, spireJwtSource, logger))
+	router.PathPrefix("/api/order").Handler(middleware.GatewayMiddleware(orderProxy, cfg.SpiffeIDs.Order, spireJwtSource, logger))
 
 	router.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) {
 		handleLogout(w, r, logger)
@@ -46,16 +47,10 @@ func SetupRoutes(cfg *config.GatewayConfig, logger *zap.Logger, oauth2Config oau
 
 func handleLogout(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 	cookie, err := r.Cookie("session_id")
-	if err != nil || cookie.Value == "" {
-		if err != nil {
-			logger.Error("Failed to retrieve session_id cookie", zap.Error(err))
-		} else {
-			logger.Error("session_id cookie is not present")
-		}
-	}
-
-	if err == nil && cookie.Value != "" {
+	if err == nil {
 		sessionmanager.DeleteSession(cookie.Value)
+		
+		logger.Info("User logged out", zap.String("email", cookie.Value))
 	}
 
 	expiration := time.Now().Add(-24 * time.Hour)
@@ -69,8 +64,6 @@ func handleLogout(w http.ResponseWriter, r *http.Request, logger *zap.Logger) {
 
 	http.SetCookie(w, &invalidated_cookie)
 
-	logger.Info("User logged out", zap.String("email", cookie.Value))
-	
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -79,7 +72,7 @@ func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.
 	if err := json.NewDecoder(r.Body).Decode(&dexCodeExchangeRequest); err != nil {
 		logger.Error("Invalid to OIDC code exchange request.", zap.Error(err))
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		
+
 		return
 	}
 
@@ -89,7 +82,7 @@ func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.
 	if err != nil {
 		logger.Error("Failed to exchange the authorization code for a token.", zap.Error(err))
 		http.Error(w, "Failed to exchange the authorization code for a token", http.StatusInternalServerError)
-		
+
 		return
 	}
 
@@ -97,7 +90,7 @@ func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.
 	if !ok {
 		logger.Error("ID Token not found in the OAuth2Token.")
 		http.Error(w, "ID Token not found", http.StatusInternalServerError)
-		
+
 		return
 	}
 
@@ -105,7 +98,7 @@ func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.
 		ClientID: oauth2Config.ClientID,
 	}
 	verifier := oidcProvider.Verifier(oidcConfig)
-	
+
 	idToken, err := verifier.Verify(ctx, rawIDToken)
 	if err != nil {
 		logger.Error("Failed to verify OIDC ID token.", zap.Error(err))
@@ -115,11 +108,11 @@ func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.
 	}
 
 	var claims IDTokenClaims
-	
+
 	if err := idToken.Claims(&claims); err != nil {
 		logger.Error("Failed to parse OIDC ID token claims.", zap.Error(err))
 		http.Error(w, "Failed to parse ID token claims", http.StatusInternalServerError)
-		
+
 		return
 	}
 

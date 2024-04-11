@@ -23,10 +23,15 @@ func main() {
 	}()
 
 	gatewayConfig := config.GetGatewayConfig()
+	
 	oauth2Config := config.GetOauth2Config()
 	oidcProvider := config.GetOIDCProvider(logger)
+	
+	spireJwtSource := config.GetSpireJwtSource(logger)
 
-	router := handler.SetupRoutes(gatewayConfig, logger, oauth2Config, oidcProvider)
+	defer spireJwtSource.Close()
+
+	router := handler.SetupRoutes(gatewayConfig, oauth2Config, oidcProvider, spireJwtSource, logger)
 
 	srv := &http.Server{
 		Addr:         "0.0.0.0:30000",

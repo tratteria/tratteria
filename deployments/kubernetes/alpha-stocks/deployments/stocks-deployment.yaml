@@ -7,6 +7,7 @@ metadata:
   labels:
     io.kompose.service: stocks
   name: stocks
+  namespace: alpha-stocks-dev
 spec:
   replicas: 1
   selector:
@@ -22,23 +23,43 @@ spec:
       labels:
         io.kompose.network/docker-compose-default: "true"
         io.kompose.service: stocks
+      namespace: alpha-stocks-dev
     spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: stocks-service-account
       containers:
         - env:
             - name: STOCKS_DB_PATH
               value: /var/lib/stocks-db/stock.db
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: GATEWAY_SERVICE_SPIFFE_ID
+              value: spiffe://alphastocks.org/gateway
+            - name: ORDER_SERVICE_SPIFFE_ID
+              value: spiffe://alphastocks.org/order
+            - name: STOCKS_SERVICE_SPIFFE_ID
+              value: spiffe://alphastocks.org/stocks
           image: stocks
           name: stocks
           imagePullPolicy: Never
           ports:
-            - containerPort: 8080
-              hostPort: 8080
+            - containerPort: 8070
+              hostPort: 8070
               protocol: TCP
           volumeMounts:
             - mountPath: /var/lib/stocks-db
               name: stocks-db
+            - mountPath: /run/spire/sockets
+              name: spire-agent-socket
+              readOnly: true
       restartPolicy: Always
       volumes:
         - name: stocks-db
           persistentVolumeClaim:
             claimName: stocks-db
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
