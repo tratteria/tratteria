@@ -87,7 +87,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 		"iss":  s.Config.Issuer,
 		"iat":  time.Now().Unix(),
 		"aud":  s.Config.Audience,
-		"exp":  time.Now().Add(time.Duration(time.Second)).Unix(),
+		"exp":  time.Now().Add(s.Config.Token.LifeTime).Unix(),
 		"txn":  txnID,
 		"sub":  subject,
 		"purp": txnTokenRequest.Scope,
