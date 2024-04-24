@@ -40,6 +40,6 @@ The JWKS can be either distributed through your infrastructure or accessed at  `
 
 
 <br><br>
-Find the Kubernetes deployment configurations of the example application [here](https://github.com/SGNL-ai/Tratteria/tree/main/example-application/deployments/kubernetes/tratteria/configs/config.yaml).
+Find the Kubernetes deployment configurations of the example application [here](https://github.com/SGNL-ai/Tratteria/tree/main/example-application/deployments/kubernetes/tratteria/).
 
 Contributions to the project are welcome, including feature enhancements, bug fixes, and documentation improvements.
