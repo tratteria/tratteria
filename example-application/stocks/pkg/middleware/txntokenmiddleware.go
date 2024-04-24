@@ -26,7 +26,7 @@ var str2Purpose = map[string]purpose{
 	"StockSearch":           stockSearch,
 	"StockDetails":          stockDetails,
 	"StocksHoldingsDetails": stocksHoldingsDetails,
-	"StocksTrade": stocksTrade,
+	"StocksTrade":           stocksTrade,
 }
 
 type tradeAction string
@@ -107,6 +107,7 @@ func verifyUpdateUserStockAuthorizationContexts(purpose purpose, authContext map
 	if err != nil {
 		return err
 	}
+
 	r.Body = io.NopCloser(bytes.NewReader(body))
 
 	var updateRequest struct {
@@ -212,6 +213,7 @@ func getTxnTokenMiddleware(traTsVerifier *trats.Verifier, jwks string, logger *z
 			if err != nil {
 				logger.Error("Failed to verify txn token", zap.Error(err))
 				http.Error(w, "Unauthorized: Invalid txn token", http.StatusForbidden)
+
 				return
 			}
 
@@ -219,6 +221,7 @@ func getTxnTokenMiddleware(traTsVerifier *trats.Verifier, jwks string, logger *z
 			if err != nil {
 				logger.Error("Failed to verify request contexts.", zap.Error(err))
 				http.Error(w, "Failed to verify request contexts", http.StatusForbidden)
+
 				return
 			}
 

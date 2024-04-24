@@ -73,6 +73,7 @@ func verifyStockTradeRequestContexts(purpose purpose, authContext map[string]any
 	if err != nil {
 		return err
 	}
+
 	r.Body = io.NopCloser(bytes.NewReader(body))
 
 	var orderRequest struct {
@@ -174,6 +175,7 @@ func getTxnTokenMiddleware(traTsVerifier *trats.Verifier, jwks string, logger *z
 			if err != nil {
 				logger.Error("Failed to verify txn token", zap.Error(err))
 				http.Error(w, "Unauthorized: Invalid txn token", http.StatusForbidden)
+
 				return
 			}
 
@@ -181,6 +183,7 @@ func getTxnTokenMiddleware(traTsVerifier *trats.Verifier, jwks string, logger *z
 			if err != nil {
 				logger.Error("Failed to verify request contexts.", zap.Error(err))
 				http.Error(w, "Failed to verify request contexts", http.StatusForbidden)
+
 				return
 			}
 

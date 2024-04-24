@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'stocks/**'
+      - 'example-application/stocks/**'
   pull_request:
     branches: [main]
     paths:
-      - 'stocks/**'
+      - 'example-application/stocks/**'
 
 jobs:
   lint:
@@ -28,4 +28,4 @@ jobs:
         with:
           version: v1.54.2
           args: --timeout 5m --verbose
-          working-directory: ./stocks
+          working-directory: ./example-application/stocks

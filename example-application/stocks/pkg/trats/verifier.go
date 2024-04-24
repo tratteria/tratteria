@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwk"
-
 )
 
 type Verifier struct {
