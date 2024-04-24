@@ -31,11 +31,11 @@ type GatewayConfig struct {
 
 func GetGatewayConfig() *GatewayConfig {
 	return &GatewayConfig{
-		TxnTokenServiceURL: getEnv("TXN_TOKEN_SERVICE_URL"),
+		TxnTokenServiceURL: getEnv("TTS_URL"),
 		StocksServiceURL:   getEnv("STOCKS_SERVICE_URL"),
 		OrderServiceURL:    getEnv("ORDER_SERVICE_URL"),
 		SpiffeIDs: &spiffeIDs{
-			TxnToken: spiffeid.RequireFromString(getEnv("TXN_TOKEN_SERVICE_SPIFFE_ID")),
+			TxnToken: spiffeid.RequireFromString(getEnv("TTS_SPIFFE_ID")),
 			Gateway:  spiffeid.RequireFromString(getEnv("GATEWAY_SERVICE_SPIFFE_ID")),
 			Order:    spiffeid.RequireFromString(getEnv("ORDER_SERVICE_SPIFFE_ID")),
 			Stocks:   spiffeid.RequireFromString(getEnv("STOCKS_SERVICE_SPIFFE_ID")),

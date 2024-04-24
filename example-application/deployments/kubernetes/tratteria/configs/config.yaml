@@ -1,12 +1,12 @@
-issuer: https://alphastocks.com/txn-token-service
+issuer: https://alphastocks.com/tts
 audience: https://alphastocks.com/
 token:
   lifeTime: "15s"
 spiffe:
   endpoint_socket: unix:///run/spire/sockets/agent.sock
-  serviceID: spiffe://alphastocks.org/txn-token
+  serviceID: spiffe://alphastocks.com/tts
   authorizedServiceIDs:
-    - spiffe://alphastocks.org/gateway
+    - spiffe://alphastocks.com/gateway
 clientAuthenticationMethods:
   OIDC:
     clientId: alpha-stocks-client

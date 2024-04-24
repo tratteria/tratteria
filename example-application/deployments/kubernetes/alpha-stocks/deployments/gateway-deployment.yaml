@@ -7,7 +7,7 @@ metadata:
   labels:
     io.kompose.service: gateway
   name: gateway
-  namespace: alpha-stocks-dev
+  namespace: alpha-stocks
 spec:
   replicas: 1
   selector:
@@ -21,7 +21,7 @@ spec:
       labels:
         io.kompose.network/docker-compose-default: "true"
         io.kompose.service: gateway
-      namespace: alpha-stocks-dev
+      namespace: alpha-stocks
     spec:
       hostPID: true
       hostNetwork: true
@@ -29,8 +29,8 @@ spec:
       serviceAccountName: gateway-service-account
       containers:
         - env:
-            - name: TXN_TOKEN_SERVICE_URL
-              value: http://txn-token.txn-token-ns.svc.cluster.local:9090
+            - name: TTS_URL
+              value: http://tts.tts-ns.svc.cluster.local:9090
             - name: ORDER_SERVICE_URL
               value: http://order:8090
             - name: STOCKS_SERVICE_URL
@@ -47,14 +47,14 @@ spec:
               value: http://dex.dex-ns.svc.cluster.local:5556/dex
             - name: SPIFFE_ENDPOINT_SOCKET
               value: unix:///run/spire/sockets/agent.sock
-            - name: TXN_TOKEN_SERVICE_SPIFFE_ID
-              value: spiffe://alphastocks.org/txn-token
+            - name: TTS_SPIFFE_ID
+              value: spiffe://alphastocks.com/tts
             - name: GATEWAY_SERVICE_SPIFFE_ID
-              value: spiffe://alphastocks.org/gateway
+              value: spiffe://alphastocks.com/gateway
             - name: ORDER_SERVICE_SPIFFE_ID
-              value: spiffe://alphastocks.org/order
+              value: spiffe://alphastocks.com/order
             - name: STOCKS_SERVICE_SPIFFE_ID
-              value: spiffe://alphastocks.org/stocks
+              value: spiffe://alphastocks.com/stocks
           image: gateway
           name: gateway
           imagePullPolicy: Never

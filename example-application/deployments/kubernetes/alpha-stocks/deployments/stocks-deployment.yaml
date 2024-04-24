@@ -7,7 +7,7 @@ metadata:
   labels:
     io.kompose.service: stocks
   name: stocks
-  namespace: alpha-stocks-dev
+  namespace: alpha-stocks
 spec:
   replicas: 1
   selector:
@@ -23,7 +23,7 @@ spec:
       labels:
         io.kompose.network/docker-compose-default: "true"
         io.kompose.service: stocks
-      namespace: alpha-stocks-dev
+      namespace: alpha-stocks
     spec:
       hostPID: true
       hostNetwork: true
@@ -36,19 +36,19 @@ spec:
             - name: SPIFFE_ENDPOINT_SOCKET
               value: unix:///run/spire/sockets/agent.sock
             - name: GATEWAY_SERVICE_SPIFFE_ID
-              value: spiffe://alphastocks.org/gateway
+              value: spiffe://alphastocks.com/gateway
             - name: ORDER_SERVICE_SPIFFE_ID
-              value: spiffe://alphastocks.org/order
+              value: spiffe://alphastocks.com/order
             - name: STOCKS_SERVICE_SPIFFE_ID
-              value: spiffe://alphastocks.org/stocks
+              value: spiffe://alphastocks.com/stocks
             - name: TRATS_AUDIENCE
               value: https://alphastocks.com/
             - name: TRATS_ISSUER
-              value: https://alphastocks.com/txn-token-service
-            - name: TXN_TOKEN_JWKS
+              value: https://alphastocks.com/tts
+            - name: TTS_JWKS
               valueFrom:
                 configMapKeyRef:
-                  name: txn-token-service-public-key
+                  name: tts-public-key
                   key: jwks
             - name: ENABLE_SPIRE
               value: "${ENABLE_SPIRE}"

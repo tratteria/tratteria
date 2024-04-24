@@ -42,7 +42,7 @@ func GetStocksConfig() *StocksConfig {
 			Stocks:  spiffeid.RequireFromString(getEnv("STOCKS_SERVICE_SPIFFE_ID")),
 		},
 		TxnTokenKeys: &txnTokenKeys{
-			JWKS: getEnv("TXN_TOKEN_JWKS"),
+			JWKS: getEnv("TTS_JWKS"),
 		},
 		Toggles: &toggles{
 			SpireToggle:    getBoolEnv("ENABLE_SPIRE"),

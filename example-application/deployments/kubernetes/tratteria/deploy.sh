@@ -1,10 +1,10 @@
-# Building Tnx-Token images
-echo "\nBuilding Tnx-Token Service Image...\n"
+# Building Tratteria images
+echo "\nBuilding Tratteria Image...\n"
 
-docker build -t txn-token:latest -f ../../../../service/Dockerfile ../../../../service
+docker build -t tratteria:latest -f ../../../../service/Dockerfile ../../../../service
 
-# Applying the Txn-Token Configurations
-echo "\nApplying the Txn-Token Configurations...\n"
+# Applying the Tratteria Configurations
+echo "\nApplying the Tratteria Service Configurations...\n"
 
 # Generating Transaction Tokens Signing Keys
 echo "\nGenerating Transaction Tokens Signing Keys...\n"
@@ -36,14 +36,14 @@ JWKS=$(cat <<EOF
 EOF
 )
 
-kubectl create secret -n txn-token-ns generic rsa-keys \
+kubectl create secret -n tts-ns generic rsa-keys \
   --from-literal=privateKey="$ENCODED_PRIVATE_KEY" \
   --from-literal=jwks="$JWKS" \
   --from-literal=KeyID="$KEY_ID"
 
-kubectl create configmap txn-token-service-public-key --from-literal=jwks="$JWKS" -n alpha-stocks-dev
+kubectl create configmap tts-public-key --from-literal=jwks="$JWKS" -n alpha-stocks
 
-kubectl create configmap config --from-file=config.yaml=configs/config.yaml -n txn-token-ns
+kubectl create configmap config --from-file=config.yaml=configs/config.yaml -n tts-ns
   
 kubectl apply -f roles/
 kubectl apply -f service-accounts/

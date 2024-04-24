@@ -1,4 +1,4 @@
-echo "Toggle on SPIRE? (y/n)"
+echo "Enable SPIRE? (y/n)"
 read enable_spire
 
 if [[ "$enable_spire" =~ ^[Yy]$ ]]; then
@@ -10,7 +10,7 @@ else
     exit 1
 fi
 
-echo "Toggle on TxnToken ? (y/n)"
+echo "Enable TxnToken ? (y/n)"
 read enable_txn_token
 
 if [[ "$enable_txn_token" =~ ^[Yy]$ ]]; then
@@ -56,8 +56,8 @@ chmod +x deploy.sh
 ./deploy.sh
 cd ..
 
-# Deploying Txn-Token
-echo "\nDeploying Txn-Token...\n"
+# Deploying Tratteria
+echo "\nDeploying Tratteria...\n"
 
 cd tratteria
 chmod +x deploy.sh
