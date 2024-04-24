@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: txn-token
+  namespace: txn-token-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: txn-token
+  template:
+    metadata:
+      labels:
+        app: txn-token
+      namespace: txn-token-ns
+    spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: txn-token-service-account
+      containers:
+        - env:
+            - name: PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: rsa-keys
+                  key: privateKey
+            - name: JWKS
+              valueFrom:
+                secretKeyRef:
+                  name: rsa-keys
+                  key: jwks
+            - name: KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: rsa-keys
+                  key: KeyID
+          image: txn-token
+          name: txn-token
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9090
+              hostPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /run/spire/sockets
+              name: spire-agent-socket
+              readOnly: true
+            - name: config-volume
+              mountPath: /app/config
+      restartPolicy: Always
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
+        - name: config-volume
+          configMap:
+            name: config

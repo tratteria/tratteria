@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dex
+  namespace: dex-ns
+spec:
+  type: NodePort
+  ports:
+  - port: 5556
+    targetPort: 5556
+    nodePort: 32000
+    protocol: TCP
+    name: http
+  selector:
+    app: dex

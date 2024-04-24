@@ -1,0 +1,14 @@
+issuer: https://alphastocks.com/txn-token-service
+audience: https://alphastocks.com/
+token:
+  lifeTime: "15s"
+spiffe:
+  endpoint_socket: unix:///run/spire/sockets/agent.sock
+  serviceID: spiffe://alphastocks.org/txn-token
+  authorizedServiceIDs:
+    - spiffe://alphastocks.org/gateway
+clientAuthenticationMethods:
+  OIDC:
+    clientId: alpha-stocks-client
+    providerURL: http://dex.dex-ns.svc.cluster.local:5556/dex
+    subjectField: email

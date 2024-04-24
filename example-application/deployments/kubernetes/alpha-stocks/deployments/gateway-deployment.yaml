@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: gateway
+  name: gateway
+  namespace: alpha-stocks-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: gateway
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/docker-compose-default: "true"
+        io.kompose.service: gateway
+      namespace: alpha-stocks-dev
+    spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: gateway-service-account
+      containers:
+        - env:
+            - name: TXN_TOKEN_SERVICE_URL
+              value: http://txn-token.txn-token-ns.svc.cluster.local:9090
+            - name: ORDER_SERVICE_URL
+              value: http://order:8090
+            - name: STOCKS_SERVICE_URL
+              value: http://stocks:8070
+            - name: OAUTH2_CLIENT_ID
+              value: alpha-stocks-client
+            - name: OAUTH2_CLIENT_SECRET
+              value: MV9zf+XnZvs/nJy4Z+ya7A== # Replace this value for your installation
+            - name: OAUTH2_REDIRECT_URL
+              value: http://localhost:4200/callback
+            - name: OAUTH2_TOKEN_URL
+              value: http://dex.dex-ns.svc.cluster.local:5556/dex/token
+            - name: OIDC_ISSUER_URL
+              value: http://dex.dex-ns.svc.cluster.local:5556/dex
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: TXN_TOKEN_SERVICE_SPIFFE_ID
+              value: spiffe://alphastocks.org/txn-token
+            - name: GATEWAY_SERVICE_SPIFFE_ID
+              value: spiffe://alphastocks.org/gateway
+            - name: ORDER_SERVICE_SPIFFE_ID
+              value: spiffe://alphastocks.org/order
+            - name: STOCKS_SERVICE_SPIFFE_ID
+              value: spiffe://alphastocks.org/stocks
+          image: gateway
+          name: gateway
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 30000
+              hostPort: 30000
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /run/spire/sockets
+              name: spire-agent-socket
+              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
