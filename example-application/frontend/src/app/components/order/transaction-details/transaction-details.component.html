@@ -10,7 +10,12 @@
       <p><strong>Operation:</strong> {{ transactionDetails.operation }}</p>
       <p><strong>Stock:</strong> {{ transactionDetails.stockName }} ({{ transactionDetails.stockSymbol }})</p>
       <p><strong>Quantity:</strong> {{ transactionDetails.quantity }}</p>
-      <p><strong>Total Cost:</strong> {{ transactionDetails.totalValue | currency }}</p>
+      <ng-container *ngIf="transactionDetails.operation === 'Buy'; else sellBlock">
+        <p><strong>Total Cost:</strong> {{ transactionDetails.totalValue | currency }}</p>
+      </ng-container>
+      <ng-template #sellBlock>
+        <p><strong>Total Revenue:</strong> {{ transactionDetails.totalValue | currency }}</p>
+      </ng-template>
     </div>
     <button class="action-button" routerLink="/portfolio">
       <i class="fas fa-briefcase"></i> Go to Portfolio
