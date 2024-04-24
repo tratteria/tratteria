@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: txn-token
-  namespace: txn-token-ns
+  name: tts
+  namespace: tts-ns
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: txn-token
+      app: tts
   template:
     metadata:
       labels:
-        app: txn-token
-      namespace: txn-token-ns
+        app: tts
+      namespace: tts-ns
     spec:
       hostPID: true
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-      serviceAccountName: txn-token-service-account
+      serviceAccountName: tts-service-account
       containers:
         - env:
             - name: PRIVATE_KEY
@@ -35,8 +35,8 @@ spec:
                 secretKeyRef:
                   name: rsa-keys
                   key: KeyID
-          image: txn-token
-          name: txn-token
+          image: tratteria
+          name: tratteria
           imagePullPolicy: Never
           ports:
             - containerPort: 9090

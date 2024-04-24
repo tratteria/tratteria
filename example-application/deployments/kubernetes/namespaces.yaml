@@ -8,7 +8,7 @@ items:
 - apiVersion: v1
   kind: Namespace
   metadata:
-    name: alpha-stocks-dev
+    name: alpha-stocks
 - apiVersion: v1
   kind: Namespace
   metadata:
@@ -16,4 +16,4 @@ items:
 - apiVersion: v1
   kind: Namespace
   metadata:
-    name: txn-token-ns
+    name: tts-ns

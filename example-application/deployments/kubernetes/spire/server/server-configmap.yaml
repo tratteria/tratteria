@@ -9,7 +9,7 @@ data:
       bind_address = "0.0.0.0"
       bind_port = "8081"
       socket_path = "/tmp/spire-server/private/api.sock"
-      trust_domain = "alphastocks.org"
+      trust_domain = "alphastocks.com"
       data_dir = "/run/spire/data"
       log_level = "DEBUG"
       #AWS requires the use of RSA.  EC cryptography is not supported

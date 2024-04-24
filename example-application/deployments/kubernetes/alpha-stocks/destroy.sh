@@ -1,2 +1,2 @@
 # Destroying Spire Configurations
-kubectl delete namespace alpha-stocks-dev
+kubectl delete namespace alpha-stocks

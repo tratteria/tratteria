@@ -4,7 +4,7 @@ metadata:
   labels:
     io.kompose.service: stocks-db
   name: stocks-db
-  namespace: alpha-stocks-dev
+  namespace: alpha-stocks
 spec:
   accessModes:
     - ReadWriteOnce

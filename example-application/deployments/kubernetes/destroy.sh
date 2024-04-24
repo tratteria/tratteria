@@ -14,8 +14,8 @@ chmod +x destroy.sh
 ./destroy.sh
 cd ..
 
-# Destroying Txn-Token Resources
-echo "\nDestroying Txn-Token Resources...\n"
+# Destroying Tratteria Resources
+echo "\nDestroying Tratteria Resources...\n"
 
 cd tratteria
 chmod +x destroy.sh

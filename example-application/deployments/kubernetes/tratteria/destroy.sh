@@ -1,2 +1,2 @@
-# Destroying Tnx-Token Configurations
-kubectl delete namespace txn-token-ns
+# Destroying Tnx-Token Service Resources
+kubectl delete namespace tts-ns

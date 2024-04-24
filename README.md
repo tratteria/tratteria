@@ -6,18 +6,18 @@
 Tratteria is configured using a YAML file. Below is an example configuration:
 
 ```yaml
-issuer: https://example.org/txn-token-service
+issuer: https://example.org/tts
 audience: https://example.org/
 token:
   lifeTime: "15s"
 spiffe:
   endpoint_socket: unix:///run/spire/sockets/agent.sock
-  serviceID: spiffe://example.org/txn-token
+  serviceID: spiffe://example.org/tts
   authorizedServiceIDs:
     - spiffe://example.org/gateway
 clientAuthenticationMethods:
   OIDC:
-    clientId: alpha-stocks-client
+    clientId: example-client
     providerURL: http://example.org/oidcprovider
     subjectField: email
 ```

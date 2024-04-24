@@ -43,7 +43,7 @@ done
 
 kubectl exec -n spire spire-server-0 -- \
     /opt/spire/bin/spire-server entry create \
-    -spiffeID spiffe://alphastocks.org/ns/spire/sa/spire-agent \
+    -spiffeID spiffe://alphastocks.com/ns/spire/sa/spire-agent \
     -selector k8s_sat:cluster:docker-desktop \
     -selector k8s_sat:agent_ns:spire \
     -selector k8s_sat:agent_sa:spire-agent \
@@ -51,28 +51,28 @@ kubectl exec -n spire spire-server-0 -- \
 
 kubectl exec -n spire spire-server-0 -- \
     /opt/spire/bin/spire-server entry create \
-    -spiffeID spiffe://alphastocks.org/stocks \
-    -parentID spiffe://alphastocks.org/ns/spire/sa/spire-agent \
-    -selector k8s:ns:alpha-stocks-dev \
+    -spiffeID spiffe://alphastocks.com/stocks \
+    -parentID spiffe://alphastocks.com/ns/spire/sa/spire-agent \
+    -selector k8s:ns:alpha-stocks \
     -selector k8s:sa:stocks-service-account
 
 kubectl exec -n spire spire-server-0 -- \
     /opt/spire/bin/spire-server entry create \
-    -spiffeID spiffe://alphastocks.org/gateway \
-    -parentID spiffe://alphastocks.org/ns/spire/sa/spire-agent \
-    -selector k8s:ns:alpha-stocks-dev \
+    -spiffeID spiffe://alphastocks.com/gateway \
+    -parentID spiffe://alphastocks.com/ns/spire/sa/spire-agent \
+    -selector k8s:ns:alpha-stocks \
     -selector k8s:sa:gateway-service-account
 
 kubectl exec -n spire spire-server-0 -- \
     /opt/spire/bin/spire-server entry create \
-    -spiffeID spiffe://alphastocks.org/order \
-    -parentID spiffe://alphastocks.org/ns/spire/sa/spire-agent \
-    -selector k8s:ns:alpha-stocks-dev \
+    -spiffeID spiffe://alphastocks.com/order \
+    -parentID spiffe://alphastocks.com/ns/spire/sa/spire-agent \
+    -selector k8s:ns:alpha-stocks \
     -selector k8s:sa:order-service-account
 
 kubectl exec -n spire spire-server-0 -- \
     /opt/spire/bin/spire-server entry create \
-    -spiffeID spiffe://alphastocks.org/txn-token \
-    -parentID spiffe://alphastocks.org/ns/spire/sa/spire-agent \
-    -selector k8s:ns:txn-token-ns \
-    -selector k8s:sa:txn-token-service-account
+    -spiffeID spiffe://alphastocks.com/tts \
+    -parentID spiffe://alphastocks.com/ns/spire/sa/spire-agent \
+    -selector k8s:ns:tts-ns \
+    -selector k8s:sa:tts-service-account

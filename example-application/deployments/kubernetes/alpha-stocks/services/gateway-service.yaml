@@ -7,7 +7,7 @@ metadata:
   labels:
     io.kompose.service: gateway
   name: gateway
-  namespace: alpha-stocks-dev
+  namespace: alpha-stocks
 spec:
   type: NodePort
   ports:

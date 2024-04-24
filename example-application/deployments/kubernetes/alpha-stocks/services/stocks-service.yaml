@@ -7,7 +7,7 @@ metadata:
   labels:
     io.kompose.service: stocks
   name: stocks
-  namespace: alpha-stocks-dev
+  namespace: alpha-stocks
 spec:
   ports:
     - name: "8070"
