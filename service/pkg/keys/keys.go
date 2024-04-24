@@ -48,6 +48,7 @@ func Initialize(appConfig *config.AppConfig) error {
 	if block == nil {
 		return errors.New("failed to decode private key PEM block")
 	}
+
 	if len(rest) > 0 {
 		return errors.New("unexpected extra data found after PEM block")
 	}

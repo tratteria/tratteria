@@ -115,7 +115,7 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 
 	requestDetails := make(map[string]any)
 
-	if err := json.Unmarshal([]byte(requestDetailsJSON), &requestDetails); err != nil {
+	if err := json.Unmarshal(requestDetailsJSON, &requestDetails); err != nil {
 		h.Logger.Error("Failed to unmarshal request details from the request", zap.Error(err))
 		http.Error(w, "Invalid request details format", http.StatusBadRequest)
 
@@ -134,7 +134,7 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 
 	requestContext := make(map[string]any)
 
-	if err := json.Unmarshal([]byte(requestContextJSON), &requestContext); err != nil {
+	if err := json.Unmarshal(requestContextJSON, &requestContext); err != nil {
 		h.Logger.Error("Failed to unmarshal request context from the request", zap.Error(err))
 		http.Error(w, "Invalid request context format", http.StatusBadRequest)
 
@@ -165,6 +165,7 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	if err := json.NewEncoder(w).Encode(txnTokenResponse); err != nil {
 		h.Logger.Error("Failed to encode the token response.", zap.Error(err))
 

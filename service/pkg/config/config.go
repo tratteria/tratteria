@@ -30,6 +30,7 @@ func (t *Token) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var tmp struct {
 		LifeTime string `yaml:"lifeTime"`
 	}
+
 	if err := unmarshal(&tmp); err != nil {
 		return err
 	}
@@ -40,6 +41,7 @@ func (t *Token) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	t.LifeTime = duration
+
 	return nil
 }
 
@@ -66,6 +68,7 @@ func (s *Spiffe) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err != nil {
 		return fmt.Errorf("invalid spiffe ServiceID: %v", err)
 	}
+
 	s.ServiceID = serviceID
 
 	for _, idStr := range raw.AuthorizedServiceIDs {
@@ -73,6 +76,7 @@ func (s *Spiffe) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		if err != nil {
 			return fmt.Errorf("invalid spiffe AuthorizedServiceID: %v", err)
 		}
+
 		s.AuthorizedServiceIDs = append(s.AuthorizedServiceIDs, id)
 	}
 

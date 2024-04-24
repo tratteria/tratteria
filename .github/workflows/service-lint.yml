@@ -1,18 +1,18 @@
-name: Lint Gateway Service
+name: Lint Tratteria Service
 
 on:
   push:
     branches: [main]
     paths:
-      - 'example-application/gateway/**'
+      - 'service/**'
   pull_request:
     branches: [main]
     paths:
-      - 'example-application/gateway/**'
+      - 'service/**'
 
 jobs:
   lint:
-    name: Run golangci-lint on gateway Service
+    name: Run golangci-lint on tratteria Service
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -28,4 +28,4 @@ jobs:
         with:
           version: v1.54.2
           args: --timeout 5m --verbose
-          working-directory: ./example-application/gateway
+          working-directory: ./service
