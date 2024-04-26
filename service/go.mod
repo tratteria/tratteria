@@ -16,6 +16,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
 	github.com/pquerna/cachecontrol v0.2.0 // indirect
 	github.com/zeebo/errs v1.3.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect

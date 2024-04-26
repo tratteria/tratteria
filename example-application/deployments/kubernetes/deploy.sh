@@ -25,6 +25,11 @@ fi
 export ENABLE_SPIRE
 export ENABLE_TXN_TOKEN
 
+read -sp "Enter the authorization api bearer token: " AUTHORIZATION_API_BEARER_TOKEN
+echo
+
+export AUTHORIZATION_API_BEARER_TOKEN
+
 echo "\n\n\nDeploying Alpha Stocks...\n\n\n"
 
 # Creating namespace

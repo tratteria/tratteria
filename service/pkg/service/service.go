@@ -4,10 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
@@ -18,14 +20,16 @@ type Service struct {
 	Config               *config.AppConfig
 	SpireJwtSource       *workloadapi.JWTSource
 	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
+	AccessEvaluator      *accessevaluation.AccessEvaluator
 	Logger               *zap.Logger
 }
 
-func NewService(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, subjectTokenHandlers *subjecttokenhandler.TokenHandlers, logger *zap.Logger) *Service {
+func NewService(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, subjectTokenHandlers *subjecttokenhandler.TokenHandlers, accessEvaluator *accessevaluation.AccessEvaluator, logger *zap.Logger) *Service {
 	return &Service{
 		Config:               config,
 		SpireJwtSource:       spireJwtSource,
 		SubjectTokenHandlers: subjectTokenHandlers,
+		AccessEvaluator:      accessEvaluator,
 		Logger:               logger,
 	}
 }
@@ -75,6 +79,26 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 	}
 
 	s.Logger.Info("Successfully verified subject token.", zap.Any("subject", subject))
+
+	accessEvaluation, err := s.AccessEvaluator.Evaluate(claims, txnTokenRequest.Scope, txnTokenRequest.RequestDetails, txnTokenRequest.RequestContext)
+	if err != nil {
+		s.Logger.Error("Error evaluating access.", zap.Error(err))
+
+		return &TokenResponse{}, err
+	}
+
+	if !accessEvaluation {
+		s.Logger.Error("Access Denied.",
+			zap.Any("subject", subject),
+			zap.Any("scope", txnTokenRequest.Scope),
+			zap.Any("request-details", txnTokenRequest.RequestDetails),
+			zap.Any("request-context", txnTokenRequest.RequestContext),
+		)
+
+		return &TokenResponse{}, txntokenerrors.ErrAccessDenied
+	}
+
+	s.Logger.Info("Request authorized the access.", zap.Any("subject", subject), zap.String("scope", txnTokenRequest.Scope))
 
 	txnID, err := uuid.NewRandom()
 	if err != nil {

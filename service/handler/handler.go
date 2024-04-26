@@ -157,6 +157,8 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		switch err {
 		case txntokenerrors.ErrParsingSubjectToken, txntokenerrors.ErrInvalidSubjectTokenClaims, txntokenerrors.ErrUnsupportedTokenType, txntokenerrors.ErrConfiguredSubjectFieldNotFound:
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		case txntokenerrors.ErrAccessDenied:
+			http.Error(w, err.Error(), http.StatusForbidden)
 		default:
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}

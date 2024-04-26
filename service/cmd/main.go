@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/handler"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middleware"
@@ -22,6 +23,8 @@ type App struct {
 	Config               *config.AppConfig
 	SpireJwtSource       *workloadapi.JWTSource
 	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
+	HttpClient           *http.Client
+	AccessEvaluator      *accessevaluation.AccessEvaluator
 	Logger               *zap.Logger
 }
 
@@ -44,6 +47,10 @@ func main() {
 		logger.Fatal("Error initializing keys:", zap.Error(err))
 	}
 
+	httpClient := &http.Client{}
+
+	accessEvaluator := accessevaluation.NewAccessEvaluator(appConfig.AuthorizationAPI, httpClient)
+
 	spireJwtSource, err := config.GetSpireJwtSource(appConfig.Spiffe.EndpointSocket)
 	if err != nil {
 		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
@@ -60,6 +67,8 @@ func main() {
 		Config:               appConfig,
 		SpireJwtSource:       spireJwtSource,
 		SubjectTokenHandlers: subjectTokenHandlers,
+		HttpClient:           httpClient,
+		AccessEvaluator:      accessEvaluator,
 		Logger:               logger,
 	}
 
@@ -67,7 +76,7 @@ func main() {
 
 	app.Router.Use(middleware)
 
-	appService := service.NewService(app.Config, app.SpireJwtSource, app.SubjectTokenHandlers, app.Logger)
+	appService := service.NewService(app.Config, app.SpireJwtSource, app.SubjectTokenHandlers, app.AccessEvaluator, app.Logger)
 	appHandler := handler.NewHandlers(appService, app.Config, app.Logger)
 
 	app.initializeRoutes(appHandler)
