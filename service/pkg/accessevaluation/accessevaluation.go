@@ -42,7 +42,6 @@ func NewAccessEvaluator(authorizationAPIconfig *config.AuthorizationAPI, httpCli
 		requestMapping: authorizationAPIconfig.RequestMapping,
 		httpClient:     httpClient,
 	}
-
 }
 
 func resolveJSONPaths(inputData map[string]interface{}, mapping any) (any, error) {
@@ -53,21 +52,26 @@ func resolveJSONPaths(inputData map[string]interface{}, mapping any) (any, error
 			if err != nil {
 				return nil, err
 			}
+
 			return value, nil
 		}
+
 		return v, nil
 
 	case map[string]interface{}:
 		resolvedMap := make(map[string]interface{})
+
 		for key, val := range v {
 			resolvedValue, err := resolveJSONPaths(inputData, val)
 			if err != nil {
 				continue
 			}
+
 			if resolvedValue != nil {
 				resolvedMap[key] = resolvedValue
 			}
 		}
+
 		return resolvedMap, nil
 
 	default:

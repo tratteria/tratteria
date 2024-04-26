@@ -119,17 +119,20 @@ type AuthorizationAPIAuthenticationToken struct {
 
 func convertMap(m map[interface{}]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
+
 	for k, v := range m {
 		strKey, ok := k.(string)
 		if !ok {
 			panic(fmt.Sprintf("map key is not a string: %v", k))
 		}
+
 		if subMap, isMap := v.(map[interface{}]interface{}); isMap {
 			result[strKey] = convertMap(subMap)
 		} else {
 			result[strKey] = v
 		}
 	}
+
 	return result
 }
 
@@ -277,6 +280,7 @@ func resolveEnvVariablesUtil(v reflect.Value) {
 		if field.Kind() == reflect.String {
 			fieldValue := field.String()
 			matches := envVarRegex.FindStringSubmatch(fieldValue)
+
 			if len(matches) > 1 {
 				envVarName := matches[1]
 				if value, exists := os.LookupEnv(envVarName); exists {
