@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -114,6 +115,15 @@ func (a *AccessEvaluator) Evaluate(subject_token interface{}, Scope string, Requ
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return false, fmt.Errorf("error reading error response body from access evaluation api: %w", err)
+		}
+		
+		return false, fmt.Errorf("access evaluation api request failed with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
 
 	var response accessEvaluationResponse
 
