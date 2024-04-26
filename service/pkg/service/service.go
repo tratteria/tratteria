@@ -98,7 +98,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 		return &TokenResponse{}, txntokenerrors.ErrAccessDenied
 	}
 
-	s.Logger.Info("Request authorized the access.", zap.Any("subject", subject), zap.String("scope", txnTokenRequest.Scope))
+	s.Logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("scope", txnTokenRequest.Scope))
 
 	txnID, err := uuid.NewRandom()
 	if err != nil {
