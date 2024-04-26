@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -17,9 +19,10 @@ type AppConfig struct {
 	Issuer                      string                       `yaml:"issuer"`
 	Audience                    string                       `yaml:"audience"`
 	Token                       Token                        `yaml:"token"`
+	Keys                        *Keys                        `yaml:"keys"`
 	Spiffe                      *Spiffe                      `yaml:"spiffe"`
 	ClientAuthenticationMethods *ClientAuthenticationMethods `yaml:"clientAuthenticationMethods"`
-	Keys                        *Keys
+	AuthorizationAPI            *AuthorizationAPI            `yaml:"authorizationAPI"`
 }
 
 type Token struct {
@@ -94,9 +97,66 @@ type OIDC struct {
 }
 
 type Keys struct {
-	PrivateKey string
-	JWKS       string
-	KeyID      string
+	PrivateKey string `yaml:"privateKey"`
+	JWKS       string `yaml:"jwks"`
+	KeyID      string `yaml:"keyID"`
+}
+
+type AuthorizationAPI struct {
+	Endpoint       string                          `yaml:"endpoint"`
+	Authentication *AuthorizationAPIAuthentication `yaml:"authentication"`
+	RequestMapping map[string]interface{}          `yaml:"requestMapping"`
+}
+
+type AuthorizationAPIAuthentication struct {
+	Method string                               `yaml:"method"`
+	Token  *AuthorizationAPIAuthenticationToken `yaml:"token"`
+}
+
+type AuthorizationAPIAuthenticationToken struct {
+	Value string `yaml:"value"`
+}
+
+func convertMap(m map[interface{}]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for k, v := range m {
+		strKey, ok := k.(string)
+		if !ok {
+			panic(fmt.Sprintf("map key is not a string: %v", k))
+		}
+		if subMap, isMap := v.(map[interface{}]interface{}); isMap {
+			result[strKey] = convertMap(subMap)
+		} else {
+			result[strKey] = v
+		}
+	}
+	return result
+}
+
+func (a *AuthorizationAPI) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var raw struct {
+		Endpoint       string                          `yaml:"endpoint"`
+		Authentication *AuthorizationAPIAuthentication `yaml:"authentication"`
+		RequestMapping interface{}                     `yaml:"requestMapping"`
+	}
+
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	a.Endpoint = raw.Endpoint
+	a.Authentication = raw.Authentication
+
+	switch v := raw.RequestMapping.(type) {
+	case map[interface{}]interface{}:
+		a.RequestMapping = convertMap(v)
+	case nil:
+		a.RequestMapping = nil
+	default:
+		return fmt.Errorf("unsupported type for requestMapping: %T", v)
+	}
+
+	return nil
 }
 
 func GetAppConfig() *AppConfig {
@@ -110,9 +170,8 @@ func GetAppConfig() *AppConfig {
 		panic(fmt.Sprintf("Failed to unmarshal YAML configuration: %v", err))
 	}
 
+	resolveEnvVariables(&cfg)
 	validateConfig(&cfg)
-
-	cfg.Keys = loadKeys()
 
 	return &cfg
 }
@@ -126,11 +185,25 @@ func validateConfig(cfg *AppConfig) {
 		panic("Audience must not be empty")
 	}
 
+	if cfg.Keys.PrivateKey == "" {
+		panic("Private key must be provided")
+	}
+
+	if cfg.Keys.JWKS == "" {
+		panic("Key JWKS must be provided")
+	}
+
+	if cfg.Keys.KeyID == "" {
+		panic("KeyID must be provided")
+	}
+
 	if len(cfg.Spiffe.AuthorizedServiceIDs) == 0 {
 		panic("Authorized services spifee ids must be specified")
 	}
 
 	validateOIDC(cfg.ClientAuthenticationMethods.OIDC)
+
+	validateAuthorizationAPI(cfg.AuthorizationAPI)
 }
 
 func validateOIDC(oidc *OIDC) {
@@ -151,21 +224,34 @@ func validateOIDC(oidc *OIDC) {
 	}
 }
 
-func loadKeys() *Keys {
-	return &Keys{
-		PrivateKey: getEnv("PRIVATE_KEY"),
-		JWKS:       getEnv("JWKS"),
-		KeyID:      getEnv("KEY_ID"),
-	}
-}
-
-func getEnv(key string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists || value == "" {
-		panic(fmt.Sprintf("%s environment variable not set", key))
+func validateAuthorizationAPI(api *AuthorizationAPI) {
+	if api == nil {
+		panic("AuthorizationAPI configuration must be provided")
 	}
 
-	return value
+	if api.Endpoint == "" {
+		panic("AuthorizationAPI endpoint must not be empty")
+	}
+
+	if api.Authentication == nil {
+		panic("AuthorizationAPI authentication configuration must be provided")
+	}
+
+	if api.Authentication.Method == "" {
+		panic("AuthorizationAPI authentication method must not be empty")
+	}
+
+	if api.Authentication.Token == nil {
+		panic("AuthorizationAPI authentication token must be provided")
+	}
+
+	if api.Authentication.Token.Value == "" {
+		panic("AuthorizationAPI authentication token value must not be empty")
+	}
+
+	if len(api.RequestMapping) == 0 {
+		panic("AuthorizationAPI request mapping must be provided and cannot be empty")
+	}
 }
 
 func GetSpireJwtSource(endpointSocket string) (*workloadapi.JWTSource, error) {
@@ -177,4 +263,37 @@ func GetSpireJwtSource(endpointSocket string) (*workloadapi.JWTSource, error) {
 	}
 
 	return jwtSource, nil
+}
+
+func resolveEnvVariablesUtil(v reflect.Value) {
+	envVarRegex := regexp.MustCompile(`^\$\{([^}]+)\}$`)
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if field.Kind() == reflect.String {
+			fieldValue := field.String()
+			matches := envVarRegex.FindStringSubmatch(fieldValue)
+			if len(matches) > 1 {
+				envVarName := matches[1]
+				if value, exists := os.LookupEnv(envVarName); exists {
+					field.SetString(value)
+				} else {
+					panic(fmt.Sprintf("Environment variable %s not set", envVarName))
+				}
+			}
+		} else if field.Kind() == reflect.Struct {
+			resolveEnvVariablesUtil(field)
+		} else if field.Kind() == reflect.Ptr && field.Elem().Kind() == reflect.Struct {
+			resolveEnvVariablesUtil(field.Elem())
+		}
+	}
+}
+
+func resolveEnvVariables(cfg *AppConfig) {
+	v := reflect.ValueOf(cfg)
+	resolveEnvVariablesUtil(v)
 }

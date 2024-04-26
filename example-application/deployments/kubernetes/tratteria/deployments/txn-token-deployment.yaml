@@ -33,6 +33,11 @@ spec:
                 secretKeyRef:
                   name: rsa-keys
                   key: KeyID
+            - name: AUTHORIZATION_API_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: authorization-api-authentication
+                  key: AUTHORIZATION_API_BEARER_TOKEN
           image: tratteria
           name: tratteria
           imagePullPolicy: Never
