@@ -9,7 +9,7 @@ metadata:
   name: stocks
   namespace: alpha-stocks
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       io.kompose.service: stocks
@@ -25,8 +25,6 @@ spec:
         io.kompose.service: stocks
       namespace: alpha-stocks
     spec:
-      hostPID: true
-      hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: stocks-service-account
       containers:
@@ -59,7 +57,6 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8070
-              hostPort: 8070
               protocol: TCP
           volumeMounts:
             - mountPath: /var/lib/stocks-db

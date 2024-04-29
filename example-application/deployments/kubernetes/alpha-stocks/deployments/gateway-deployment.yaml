@@ -9,7 +9,7 @@ metadata:
   name: gateway
   namespace: alpha-stocks
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       io.kompose.service: gateway
@@ -23,8 +23,6 @@ spec:
         io.kompose.service: gateway
       namespace: alpha-stocks
     spec:
-      hostPID: true
-      hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: gateway-service-account
       containers:
@@ -60,7 +58,6 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 30000
-              hostPort: 30000
               protocol: TCP
           volumeMounts:
             - mountPath: /run/spire/sockets
