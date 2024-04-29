@@ -30,9 +30,6 @@ authorizationAPI:
     method: Bearer
     token:
       value: ${AUTHORIZATION_API_BEARER_TOKEN}
-#requestMapping: Define how to construct the request body for the Authorization API using JSON path expressions. This mapping pulls specific values from
-#the transaction-token request (subject_token, scope, request_details, and request_context) using JSON path expression and assigns them to respective
-#fields below to construct the JSON request body for the Authorization API.
   requestMapping:
     subject:
       id: "$.subject_token.email"
@@ -48,10 +45,9 @@ authorizationAPI:
     context: "$.request_context"
 ```
 
-### Key Features
 **Environment Variables:** Use environment variables for sensitive values such as private keys and API tokens. The configuration automatically resolves these variables at runtime during the service startup.
 
-**Authorization API Request Construction:** Specify how to construct the request body for the Authorization API. This configuration allows for constructing arbitrary JSON request bodies using JSON path expressions and YAML fields. The presence of a specific key in the JSON path determines whether it will be included in the request; if a key does not exist for a particular request, it will be omitted.
+**Authorization API Request:** Specify how to construct the request body for the access evaluation API using JSON path expressions and YAML fields. The configuration allows for the construction of arbitrary JSON using transaction-token request components: subject_token, scope, request_details, and request_context. If a JSON path does not exist for a request, the field is omitted. 
 
 **JWKS Endpoint:** The service signing key's JWKS can be distributed through your infrastructure, or it can be accessed at the standard `GET /.well-known/jwks.json` endpoint.
 
