@@ -4,7 +4,7 @@ metadata:
   name: tts
   namespace: tts-ns
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: tts
@@ -14,8 +14,6 @@ spec:
         app: tts
       namespace: tts-ns
     spec:
-      hostPID: true
-      hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: tts-service-account
       containers:
@@ -40,7 +38,6 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 9090
-              hostPort: 9090
               protocol: TCP
           volumeMounts:
             - mountPath: /run/spire/sockets
