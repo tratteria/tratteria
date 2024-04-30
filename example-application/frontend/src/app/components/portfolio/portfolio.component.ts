@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { StockService } from '../../services/stock.service';
-import { Holding } from '../../models/holdings.model'
+import { Holding } from '../../models/holdings.model';
 import { Router } from '@angular/router';
+import { CONSTANTS } from '../../config/constants';
 
 @Component({
   selector: 'app-portfolio',
@@ -14,6 +15,8 @@ export class PortfolioComponent implements OnInit {
   selectedStock: Holding | null = null;
   openStates: Map<string, boolean> = new Map();
   holdings: Holding[] = [];
+  errorFetchingHoldings: boolean = false;
+  constants = CONSTANTS;
 
   constructor(
     private authService: AuthService,
@@ -26,13 +29,22 @@ export class PortfolioComponent implements OnInit {
   }
 
   fetchHoldings(): void {
-    this.stockService.getHoldings().subscribe(response => {
-      if (response && response.holdings) {
-        this.holdings = response.holdings;
-        response.holdings.forEach(holding => {
-          this.openStates.set(holding.stockID, false);
-        });
-      } else {
+    this.stockService.getHoldings().subscribe({
+      next: (response) => {
+        if (response && response.holdings && response.holdings.length > 0) {
+          this.holdings = response.holdings;
+          response.holdings.forEach(holding => {
+            this.openStates.set(holding.stockID, false);
+          });
+          this.errorFetchingHoldings = false;
+        } else {
+          this.holdings = [];
+          this.errorFetchingHoldings = false;
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching holdings:', error);
+        this.errorFetchingHoldings = true;
         this.holdings = [];
       }
     });
@@ -46,7 +58,7 @@ export class PortfolioComponent implements OnInit {
   onBuyStock(stockId: string): void {
     this.router.navigate(['/order'], { queryParams: { action: 'Buy', stockId: stockId } });
   }
-  
+
   onSellStock(stockId: string): void {
     this.router.navigate(['/order'], { queryParams: { action: 'Sell', stockId: stockId } });
   }
