@@ -232,7 +232,7 @@ func GetTxnTokenMiddleware(txnTokenServiceURL string, httpClient *http.Client, s
 
 			resp, err := httpClient.Do(req)
 			if err != nil {
-				logger.Error("Failed to request txn token from token service.", zap.Error(err))
+				logger.Error("Failed to request txn token from txn-token service.", zap.Error(err))
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 
 				return
@@ -240,15 +240,20 @@ func GetTxnTokenMiddleware(txnTokenServiceURL string, httpClient *http.Client, s
 			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
-				logger.Error("Non-OK HTTP status received from token service.", zap.Int("status", resp.StatusCode))
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-
+				logger.Error("Received non-ok http status from txn-token service.", zap.Int("status", resp.StatusCode))
+			
+				if resp.StatusCode == http.StatusForbidden {
+					http.Error(w, "Access Forbidden", http.StatusForbidden)
+				} else {
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				}
+			
 				return
-			}
+			}			
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				logger.Error("Failed to read the response from token service", zap.Error(err))
+				logger.Error("Failed to read the response from txn-token service", zap.Error(err))
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
