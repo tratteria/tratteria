@@ -2,7 +2,7 @@
   <div class="header">
     <img src="assets/alpha-logo.png" alt="Alpha Logo" class="portfolio-logo" />
   </div>
-  <div *ngIf="holdings.length > 0; else noHoldings" class="holdings">
+  <div *ngIf="holdings.length > 0; else errorOrEmpty" class="holdings">
     <div *ngFor="let stock of holdings" class="holding" (click)="toggleStock(stock.stockID)">
       <div class="holding-summary">
         <span class="stock-symbol"><strong>{{ stock.stockSymbol }}</strong></span>
@@ -27,9 +27,9 @@
       </div>
     </div>
   </div>
-  <ng-template #noHoldings>
+  <ng-template #errorOrEmpty>
     <div class="no-holdings-message">
-      You do not have any portfolio holdings.
+      {{ errorFetchingHoldings ? constants.ErrorMessages.ERROR_FETCHING_HOLDINGS : constants.UIMessages.NO_HOLDINGS_AVAILABLE }}
     </div>
   </ng-template>
 </div>

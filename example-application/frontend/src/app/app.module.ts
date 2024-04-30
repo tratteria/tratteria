@@ -12,6 +12,7 @@ import { OrderComponent } from './components/order/order.component';
 import { TransactionDetailsComponent } from './components/order/transaction-details/transaction-details.component';
 import { PortfolioComponent } from './components/portfolio/portfolio.component';
 import { HomeComponent } from './components/home-component/home-component.component';
+import { ForbiddenModalComponent } from './components/forbidden-modal/forbidden-modal.component';
 
 @NgModule({
   declarations: [
@@ -22,6 +23,7 @@ import { HomeComponent } from './components/home-component/home-component.compon
     TransactionDetailsComponent,
     PortfolioComponent,
     HomeComponent,
+    ForbiddenModalComponent,
   ],
   imports: [
     BrowserModule,

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { HttpClient, HttpErrorResponse} from '@angular/common/http';
+import { Observable, of, throwError} from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Stock } from '../models/stock.model';
 import { SearchItem } from '../models/search-item.model';
@@ -45,9 +45,9 @@ export class StockService {
 
   getHoldings(): Observable<HoldingsResponse> {
     return this.http.get<HoldingsResponse>(`${this.stockAPIURL}/holdings`).pipe(
-      catchError(error => {
+      catchError((error: HttpErrorResponse) => {
         console.error('Error fetching holdings:', error);
-        return of({totalHoldings: 0, totalValue: 0, holdings: []});
+        return throwError(() => new Error('Failed to fetch holdings'));
       })
     );
   }
