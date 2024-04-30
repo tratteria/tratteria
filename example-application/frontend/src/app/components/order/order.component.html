@@ -16,7 +16,7 @@
              [max]="maxQuantity"
              (input)="calculateTotal(); fixNumber($event)" (focus)="onFocus($event)">
     </div>
-    <p class="total"><strong>Total {{ action === 'Buy' ? 'Cost' : 'Revenue' }}:</strong> ${{ total | number:'1.2-2' }}</p>
+    <p class="total"><strong>Total {{ action === 'Buy' ? 'Cost' : 'Proceeds' }}:</strong> ${{ total | number:'1.2-2' }}</p>
     <div class="button-wrapper">
       <button [ngClass]="{'buy-button': action === 'Buy', 'sell-button': action === 'Sell'}" class="button" (click)="placeOrder()">
         <i [ngClass]="{'fa fa-shopping-cart': action === 'Buy', 'fas fa-money-bill-alt': action === 'Sell'}"></i>
