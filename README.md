@@ -3,7 +3,7 @@
 
 ## Deployment
 ### Configuration
-Tratteria is configured using a YAML file and supports customization through environmental variables and JSON path expressions. Below is an example of the application's configuration:
+Tratteria is configured using a YAML file named `config.yaml`, which should be located in the `/app/config/` directory. This configuration file supports customization through environmental variables and JSON path expressions. Below is an example of the application's configuration:
 
 ```yaml
 issuer: https://example.org/tts
@@ -33,15 +33,11 @@ authorizationAPI:
   requestMapping:
     subject:
       id: "$.subject_token.email"
-      name: "$.subject_token.name"
     action:
-      type: "$.scope"
-      details:
-        action: "$.request_details.action"
-        quantity: "$.request_details.quantity"
+      name: "$.scope"
     resource:
-      stock: "$.request_details.stockID"
-      transaction: "$.request_details.transactionID"
+      stockID: "$.request_details.stockID"
+      transactionID: "$.request_details.transactionID"
     context: "$.request_context"
 ```
 
