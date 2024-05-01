@@ -25,7 +25,7 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         if (error.status === 403) {
           console.log('Access forbidden. Showing modal...');
-          this.modalService.open('Access Forbidden');
+          this.modalService.open('You do not have permission to perform this action');
         } else if (error.status === 401) {
           console.log('Unauthorized response received from the server. Logging user out...');
           this.authService.logout().subscribe({
