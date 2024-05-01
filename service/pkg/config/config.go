@@ -178,6 +178,7 @@ func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	case string:
 		envVarRegex := regexp.MustCompile(`^\$\{([^}]+)\}$`)
 		matches := envVarRegex.FindStringSubmatch(value)
+
 		if len(matches) > 1 {
 			envVarName := matches[1]
 			if envValue, exists := os.LookupEnv(envVarName); exists {
@@ -185,9 +186,12 @@ func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error 
 				if err != nil {
 					return fmt.Errorf("error parsing boolean from environment variable %s: %v", envVarName, err)
 				}
+
 				*b = BoolFromString(boolVal)
+
 				return nil
 			}
+
 			return fmt.Errorf("environment variable %s not set", envVarName)
 		}
 
@@ -195,10 +199,12 @@ func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		if err != nil {
 			return fmt.Errorf("error parsing boolean from string: %v", err)
 		}
+
 		*b = BoolFromString(boolVal)
 	default:
 		return fmt.Errorf("invalid type for the bool variable, expected bool or string, got %T", tmp)
 	}
+
 	return nil
 }
 
