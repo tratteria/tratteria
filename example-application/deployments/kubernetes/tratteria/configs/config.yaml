@@ -16,12 +16,13 @@ clientAuthenticationMethods:
     clientId: alpha-stocks-client
     providerURL: http://dex.dex-ns.svc.cluster.local:5556/dex
     subjectField: email
-authorizationAPI:
-  endpoint: https://authzen.sgnlapis.cloud/access/v1/evaluation
+enableAccessEvaluation: ${ENABLE_ACCESS_EVALUATION}
+accessEvaluationAPI:
+  endpoint: https://011d316a-70ba-4e42-8cb7-c847263bf613.mock.pstmn.io/accessEvaluation
   authentication:
     method: Bearer
     token:
-      value: ${AUTHORIZATION_API_BEARER_TOKEN}
+      value: ${ACCESS_EVALUATION_API_BEARER_TOKEN}
 #requestMapping: Define how to construct the request body for the Authorization API using JSON path expressions. This mapping pulls specific values from
 #the transaction-token request (subject_token, scope, request_details, and request_context) using JSON path expression and assigns them to respective
 #fields below to construct the JSON request body for the Authorization API.

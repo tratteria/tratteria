@@ -20,11 +20,11 @@ type Service struct {
 	Config               *config.AppConfig
 	SpireJwtSource       *workloadapi.JWTSource
 	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
-	AccessEvaluator      *accessevaluation.AccessEvaluator
+	AccessEvaluator      accessevaluation.AccessEvaluatorService
 	Logger               *zap.Logger
 }
 
-func NewService(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, subjectTokenHandlers *subjecttokenhandler.TokenHandlers, accessEvaluator *accessevaluation.AccessEvaluator, logger *zap.Logger) *Service {
+func NewService(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, subjectTokenHandlers *subjecttokenhandler.TokenHandlers, accessEvaluator accessevaluation.AccessEvaluatorService, logger *zap.Logger) *Service {
 	return &Service{
 		Config:               config,
 		SpireJwtSource:       spireJwtSource,

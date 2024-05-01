@@ -24,7 +24,7 @@ type App struct {
 	SpireJwtSource       *workloadapi.JWTSource
 	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
 	HttpClient           *http.Client
-	AccessEvaluator      *accessevaluation.AccessEvaluator
+	AccessEvaluator      accessevaluation.AccessEvaluatorService
 	Logger               *zap.Logger
 }
 
@@ -49,7 +49,12 @@ func main() {
 
 	httpClient := &http.Client{}
 
-	accessEvaluator := accessevaluation.NewAccessEvaluator(appConfig.AuthorizationAPI, httpClient)
+	var accessEvaluator accessevaluation.AccessEvaluatorService
+	if appConfig.EnableAccessEvaluation {
+		accessEvaluator = accessevaluation.NewAccessEvaluator(appConfig.AccessEvaluationAPI, httpClient)
+	} else {
+		accessEvaluator = &accessevaluation.NoOpAccessEvaluator{}
+	}
 
 	spireJwtSource, err := config.GetSpireJwtSource(appConfig.Spiffe.EndpointSocket)
 	if err != nil {
