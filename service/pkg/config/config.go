@@ -16,8 +16,6 @@ import (
 
 const CONFIG_FILE_PATH = "/app/config/config.yaml"
 
-type BoolFromString bool
-
 type AppConfig struct {
 	Issuer                      string                       `yaml:"issuer"`
 	Audience                    string                       `yaml:"audience"`
@@ -166,6 +164,8 @@ func (a *AccessEvaluationAPI) UnmarshalYAML(unmarshal func(interface{}) error) e
 	return nil
 }
 
+type BoolFromString bool
+
 func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var tmp interface{}
 	if err := unmarshal(&tmp); err != nil {
@@ -176,33 +176,29 @@ func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	case bool:
 		*b = BoolFromString(value)
 	case string:
-		envVarRegex := regexp.MustCompile(`^\$\{([^}]+)\}$`)
-		matches := envVarRegex.FindStringSubmatch(value)
-
-		if len(matches) > 1 {
-			envVarName := matches[1]
-			if envValue, exists := os.LookupEnv(envVarName); exists {
-				boolVal, err := strconv.ParseBool(envValue)
-				if err != nil {
-					return fmt.Errorf("error parsing boolean from environment variable %s: %v", envVarName, err)
-				}
-
-				*b = BoolFromString(boolVal)
-
-				return nil
+		if matched, envVarName := extractEnvVarName(value); matched {
+			envValue, err := getEnvVarValue(envVarName)
+			if err != nil {
+				return err
 			}
 
-			return fmt.Errorf("environment variable %s not set", envVarName)
-		}
+			boolVal, err := strconv.ParseBool(envValue)
 
-		boolVal, err := strconv.ParseBool(value)
-		if err != nil {
-			return fmt.Errorf("error parsing boolean from string: %v", err)
-		}
+			if err != nil {
+				return fmt.Errorf("error parsing boolean from environment variable: %v", err)
+			}
 
-		*b = BoolFromString(boolVal)
+			*b = BoolFromString(boolVal)
+		} else {
+			boolVal, err := strconv.ParseBool(value)
+			if err != nil {
+				return fmt.Errorf("error parsing boolean from string: %v", err)
+			}
+
+			*b = BoolFromString(boolVal)
+		}
 	default:
-		return fmt.Errorf("invalid type for the bool variable, expected bool or string, got %T", tmp)
+		return fmt.Errorf("invalid type for a bool variable, expected bool or string, got %T", tmp)
 	}
 
 	return nil
@@ -211,12 +207,12 @@ func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error 
 func GetAppConfig() *AppConfig {
 	data, err := os.ReadFile(CONFIG_FILE_PATH)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to read config file: %v", err))
+		panic(fmt.Sprintf("failed to read config file: %v", err))
 	}
 
 	var cfg AppConfig
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		panic(fmt.Sprintf("Failed to unmarshal YAML configuration: %v", err))
+		panic(fmt.Sprintf("failed to unmarshal YAML configuration: %v", err))
 	}
 
 	resolveEnvVariables(&cfg)
@@ -227,27 +223,27 @@ func GetAppConfig() *AppConfig {
 
 func validateConfig(cfg *AppConfig) {
 	if cfg.Issuer == "" {
-		panic("Issuer must not be empty")
+		panic("issuer must not be empty")
 	}
 
 	if cfg.Audience == "" {
-		panic("Audience must not be empty")
+		panic("audience must not be empty")
 	}
 
 	if cfg.Keys.PrivateKey == "" {
-		panic("Private key must be provided")
+		panic("private key must be provided")
 	}
 
 	if cfg.Keys.JWKS == "" {
-		panic("Key JWKS must be provided")
+		panic("key JWKS must be provided")
 	}
 
 	if cfg.Keys.KeyID == "" {
-		panic("KeyID must be provided")
+		panic("keyID must be provided")
 	}
 
 	if len(cfg.Spiffe.AuthorizedServiceIDs) == 0 {
-		panic("Authorized services spifee ids must be specified")
+		panic("authorized services spifee ids must be specified")
 	}
 
 	validateOIDC(cfg.ClientAuthenticationMethods.OIDC)
@@ -263,15 +259,15 @@ func validateOIDC(oidc *OIDC) {
 	}
 
 	if oidc.ClientID == "" {
-		panic("OIDC Client ID must be populated")
+		panic("OIDC client ID must be populated")
 	}
 
 	if oidc.ProviderURL == "" {
-		panic("OIDC Provider URL must be populated")
+		panic("OIDC provider URL must be populated")
 	}
 
 	if oidc.SubjectField == "" {
-		panic("OIDC Subject Field must be populated")
+		panic("OIDC subject field must be populated")
 	}
 }
 
@@ -316,9 +312,26 @@ func GetSpireJwtSource(endpointSocket string) (*workloadapi.JWTSource, error) {
 	return jwtSource, nil
 }
 
-func resolveEnvVariablesUtil(v reflect.Value) {
+func extractEnvVarName(s string) (bool, string) {
 	envVarRegex := regexp.MustCompile(`^\$\{([^}]+)\}$`)
+	matches := envVarRegex.FindStringSubmatch(s)
 
+	if len(matches) > 1 {
+		return true, matches[1]
+	}
+
+	return false, ""
+}
+
+func getEnvVarValue(envVarName string) (string, error) {
+	if envValue, exists := os.LookupEnv(envVarName); exists {
+		return envValue, nil
+	}
+
+	return "", fmt.Errorf("environment variable %s not set", envVarName)
+}
+
+func resolveEnvVariablesUtil(v reflect.Value) {
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
@@ -327,15 +340,14 @@ func resolveEnvVariablesUtil(v reflect.Value) {
 		field := v.Field(i)
 		if field.Kind() == reflect.String {
 			fieldValue := field.String()
-			matches := envVarRegex.FindStringSubmatch(fieldValue)
 
-			if len(matches) > 1 {
-				envVarName := matches[1]
-				if value, exists := os.LookupEnv(envVarName); exists {
-					field.SetString(value)
-				} else {
-					panic(fmt.Sprintf("Environment variable %s not set", envVarName))
+			if matched, envVarName := extractEnvVarName(fieldValue); matched {
+				envValue, err := getEnvVarValue(envVarName)
+				if err != nil {
+					panic(err.Error())
 				}
+
+				field.SetString(envValue)
 			}
 		} else if field.Kind() == reflect.Struct {
 			resolveEnvVariablesUtil(field)
