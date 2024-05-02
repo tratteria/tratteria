@@ -93,5 +93,6 @@ func parseURL(rawurl string) *url.URL {
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing URL %s: %v", rawurl, err))
 	}
+
 	return parsedURL
 }
