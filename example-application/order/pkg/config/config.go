@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -28,7 +29,7 @@ type toggles struct {
 }
 
 type OrderConfig struct {
-	StocksServiceURL string
+	StocksServiceURL *url.URL
 	SpiffeIDs        *spiffeIDs
 	TxnTokenKeys     *txnTokenKeys
 	Toggles          *toggles
@@ -36,7 +37,7 @@ type OrderConfig struct {
 
 func GetAppConfig() *OrderConfig {
 	return &OrderConfig{
-		StocksServiceURL: getEnv("STOCKS_SERVICE_URL"),
+		StocksServiceURL: parseURL(getEnv("STOCKS_SERVICE_URL")),
 		SpiffeIDs: &spiffeIDs{
 			Gateway: spiffeid.RequireFromString(getEnv("GATEWAY_SERVICE_SPIFFE_ID")),
 			Order:   spiffeid.RequireFromString(getEnv("ORDER_SERVICE_SPIFFE_ID")),
@@ -85,4 +86,12 @@ func getEnv(key string) string {
 	}
 
 	return value
+}
+
+func parseURL(rawurl string) *url.URL {
+	parsedURL, err := url.Parse(rawurl)
+	if err != nil {
+		panic(fmt.Sprintf("Error parsing URL %s: %v", rawurl, err))
+	}
+	return parsedURL
 }

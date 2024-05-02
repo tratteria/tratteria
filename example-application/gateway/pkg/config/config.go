@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 
@@ -23,17 +24,17 @@ type spiffeIDs struct {
 }
 
 type GatewayConfig struct {
-	TxnTokenServiceURL string
-	StocksServiceURL   string
-	OrderServiceURL    string
+	TxnTokenServiceURL *url.URL
+	StocksServiceURL   *url.URL
+	OrderServiceURL    *url.URL
 	SpiffeIDs          *spiffeIDs
 }
 
 func GetAppConfig() *GatewayConfig {
 	return &GatewayConfig{
-		TxnTokenServiceURL: getEnv("TTS_URL"),
-		StocksServiceURL:   getEnv("STOCKS_SERVICE_URL"),
-		OrderServiceURL:    getEnv("ORDER_SERVICE_URL"),
+		TxnTokenServiceURL: parseURL(getEnv("TTS_URL")),
+		StocksServiceURL:   parseURL(getEnv("STOCKS_SERVICE_URL")),
+		OrderServiceURL:    parseURL(getEnv("ORDER_SERVICE_URL")),
 		SpiffeIDs: &spiffeIDs{
 			TxnToken: spiffeid.RequireFromString(getEnv("TTS_SPIFFE_ID")),
 			Gateway:  spiffeid.RequireFromString(getEnv("GATEWAY_SERVICE_SPIFFE_ID")),
@@ -102,4 +103,12 @@ func getEnv(key string) string {
 	}
 
 	return value
+}
+
+func parseURL(rawurl string) *url.URL {
+	parsedURL, err := url.Parse(rawurl)
+	if err != nil {
+		panic(fmt.Sprintf("Error parsing URL %s: %v", rawurl, err))
+	}
+	return parsedURL
 }
