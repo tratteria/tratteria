@@ -18,7 +18,7 @@ clientAuthenticationMethods:
     subjectField: email
 enableAccessEvaluation: ${ENABLE_ACCESS_EVALUATION}
 accessEvaluationAPI:
-  endpoint: https://011d316a-70ba-4e42-8cb7-c847263bf613.mock.pstmn.io/accessEvaluation
+  endpoint: https://authzen.sgnlapis.cloud/access/v1/evaluation
   authentication:
     method: Bearer
     token:
