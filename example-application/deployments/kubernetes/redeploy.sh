@@ -1,33 +1,16 @@
-echo "Enable SPIRE? (y/n)"
-read enable_spire
-
-if [[ "$enable_spire" =~ ^[Yy]$ ]]; then
-    ENABLE_SPIRE="true"
-elif [[ "$enable_spire" =~ ^[Nn]$ ]]; then
-    ENABLE_SPIRE="false"
-else
-    echo "Invalid input. Please enter 'y' or 'n'."
-    exit 1
-fi
-
-echo "Enable TxnToken ? (y/n)"
-read enable_txn_token
-
-if [[ "$enable_txn_token" =~ ^[Yy]$ ]]; then
-    ENABLE_TXN_TOKEN="true"
-elif [[ "$enable_txn_token" =~ ^[Nn]$ ]]; then
-    ENABLE_TXN_TOKEN="false"
-else
-    echo "Invalid input. Please enter 'y' or 'n'."
-    exit 1
-fi
-
-export ENABLE_SPIRE
-export ENABLE_TXN_TOKEN
+chmod +x setup.sh
+source setup.sh
 
 echo "\n\n\nRedeploying Alpha Stocks...\n\n\n"
 
 cd alpha-stocks
-chmod +x deploy.sh
-./deploy.sh
+envsubst < ./deployments/stocks-deployment.yaml | kubectl apply -f -
+envsubst < ./deployments/order-deployment.yaml | kubectl apply -f -
+kubectl apply -f deployments/gateway-deployment.yaml
+cd ..
+
+echo "\n\n\nRedeploying Tratteria...\n\n\n"
+
+cd tratteria
+envsubst < ./deployments/txn-token-deployment.yaml | kubectl apply -f -
 cd ..
