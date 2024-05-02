@@ -93,7 +93,7 @@ func (h *Handlers) SearchStocksHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetStockDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Header.Get("x-user-name")
+	username := r.Header.Get("alpha-stock-user-name")
 	if username == "" {
 		h.Logger.Error("Unable to extract username from the header of stock-search request.")
 		http.Error(w, "Unable to extract username header.", http.StatusInternalServerError)
@@ -143,7 +143,7 @@ func (h *Handlers) GetStockDetailsHandler(w http.ResponseWriter, r *http.Request
 func (h *Handlers) UpdateUserStockHandler(w http.ResponseWriter, r *http.Request) {
 	var updateRequest UpdateRequest
 
-	username := r.Header.Get("x-user-name")
+	username := r.Header.Get("alpha-stock-user-name")
 	if username == "" {
 		h.Logger.Error("Unable to extract username from the header of the update-user-stock request.")
 		http.Error(w, "Unable to extract username from the header", http.StatusInternalServerError)
@@ -221,7 +221,7 @@ func (h *Handlers) UpdateUserStockHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (h *Handlers) GetUserHoldingsHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Header.Get("x-user-name")
+	username := r.Header.Get("alpha-stock-user-name")
 	if username == "" {
 		h.Logger.Error("Unable to extract username from the header for a get-user-holdings request.")
 		http.Error(w, "Unable to extract username from the header", http.StatusInternalServerError)

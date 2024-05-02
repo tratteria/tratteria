@@ -87,7 +87,7 @@ func (s *Service) Order(ctx context.Context, username string, stockID int, order
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-user-name", username)
+	req.Header.Set("alpha-stock-user-name", username)
 
 	svidCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
