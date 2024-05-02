@@ -6,11 +6,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/middleware"
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -76,7 +76,9 @@ func (s *Service) Order(ctx context.Context, username string, stockID int, order
 		return OrderDetails{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/internal/stocks", s.Config.StocksServiceURL), bytes.NewBuffer(requestBody))
+	tokenEndpointURL := common.AppendPathToURL(s.Config.StocksServiceURL, "internal/stocks").String()
+
+	req, err := http.NewRequest(http.MethodPost, tokenEndpointURL, bytes.NewBuffer(requestBody))
 	if err != nil {
 		s.Logger.Error("Error creating request to stocks server.", zap.Error(err))
 

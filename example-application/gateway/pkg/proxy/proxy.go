@@ -8,18 +8,13 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewReverseProxy(targetURL string, logger *zap.Logger) *httputil.ReverseProxy {
-	url, err := url.Parse(targetURL)
-	if err != nil {
-		panic("Failed to parse gateway proxy target URL: " + targetURL)
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(url)
+func NewReverseProxy(targetURL *url.URL, logger *zap.Logger) *httputil.ReverseProxy {
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		originalDirector(req)
-		logger.Info("Proxying request.", zap.String("target", url.Host), zap.String("path", req.URL.Path))
+		logger.Info("Proxying request.", zap.String("target", targetURL.Host), zap.String("path", req.URL.Path))
 	}
 
 	return proxy

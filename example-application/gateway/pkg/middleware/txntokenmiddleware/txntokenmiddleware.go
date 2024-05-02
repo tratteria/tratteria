@@ -147,7 +147,7 @@ func getScope(r *http.Request) (scope, error) {
 
 }
 
-func GetTxnTokenMiddleware(txnTokenServiceURL string, httpClient *http.Client, spireJwtSource *workloadapi.JWTSource, txnTokenServiceSpiffeID spiffeid.ID, logger *zap.Logger) func(http.Handler) http.Handler {
+func GetTxnTokenMiddleware(txnTokenServiceURL *url.URL, httpClient *http.Client, spireJwtSource *workloadapi.JWTSource, txnTokenServiceSpiffeID spiffeid.ID, logger *zap.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestDetails, err := getRequestDetails(r)
@@ -212,7 +212,16 @@ func GetTxnTokenMiddleware(txnTokenServiceURL string, httpClient *http.Client, s
 			requestData.Set("request_details", encodedRequestDetails)
 			requestData.Set("request_context", encodedRequestContext)
 
-			req, _ := http.NewRequest("POST", txnTokenServiceURL+"/token_endpoint", bytes.NewBufferString(requestData.Encode()))
+			tokenEndpointURL := common.AppendPathToURL(txnTokenServiceURL, "token_endpoint").String()
+
+			req, err := http.NewRequest(http.MethodPost, tokenEndpointURL, bytes.NewBufferString(requestData.Encode()))
+			if err != nil {
+				logger.Error("Failed to create the http request for txn-token endpoint.", zap.Error(err))
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+
+				return
+			}
+
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 			ctx, cancel := context.WithTimeout(req.Context(), 5*time.Second)
@@ -241,15 +250,15 @@ func GetTxnTokenMiddleware(txnTokenServiceURL string, httpClient *http.Client, s
 
 			if resp.StatusCode != http.StatusOK {
 				logger.Error("Received non-ok http status from txn-token service.", zap.Int("status", resp.StatusCode))
-			
+
 				if resp.StatusCode == http.StatusForbidden {
 					http.Error(w, "Access Forbidden", http.StatusForbidden)
 				} else {
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				}
-			
+
 				return
-			}			
+			}
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
