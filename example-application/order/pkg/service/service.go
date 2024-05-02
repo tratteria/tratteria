@@ -13,6 +13,7 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/middleware"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/ordererrors"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/spiffe/go-spiffe/v2/svid/jwtsvid"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
@@ -173,7 +174,7 @@ func (s *Service) GetOrderDetails(username string, id string) (OrderDetails, err
 		if err == sql.ErrNoRows {
 			s.Logger.Error("No order found with the given id for the user.", zap.String("order-id", id), zap.String("user-name", username), zap.Error(err))
 
-			return OrderDetails{}, ErrOrderNotFound
+			return OrderDetails{}, ordererrors.ErrOrderNotFound
 		}
 
 		s.Logger.Error("Error querying order details from the database.", zap.Error(err))

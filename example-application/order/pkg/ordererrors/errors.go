@@ -1,6 +1,5 @@
-package service
+package ordererrors
 
 import "errors"
 
-// OrderNotFoundError.
 var ErrOrderNotFound = errors.New("order not found")
