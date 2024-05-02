@@ -12,6 +12,10 @@ import (
 	"github.com/oliveagle/jsonpath"
 )
 
+type AccessEvaluatorService interface {
+	Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error)
+}
+
 type AccessEvaluator struct {
 	endpoint          string
 	apiAuthentication apiAuthentication
@@ -32,7 +36,7 @@ type accessEvaluationResponse struct {
 	Decision bool `json:"decision"`
 }
 
-func NewAccessEvaluator(authorizationAPIconfig *config.AuthorizationAPI, httpClient *http.Client) *AccessEvaluator {
+func NewAccessEvaluator(authorizationAPIconfig *config.AccessEvaluationAPI, httpClient *http.Client) AccessEvaluatorService {
 	return &AccessEvaluator{
 		endpoint: authorizationAPIconfig.Endpoint,
 		apiAuthentication: apiAuthentication{
@@ -132,4 +136,10 @@ func (a *AccessEvaluator) Evaluate(subject_token interface{}, Scope string, Requ
 	}
 
 	return response.Decision, nil
+}
+
+type NoOpAccessEvaluator struct{}
+
+func (n *NoOpAccessEvaluator) Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error) {
+	return true, nil
 }

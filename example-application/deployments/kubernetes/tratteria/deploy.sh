@@ -41,7 +41,7 @@ kubectl create secret -n tts-ns generic rsa-keys \
   --from-literal=jwks="$JWKS" \
   --from-literal=KeyID="$KEY_ID"
 
-kubectl create secret -n tts-ns generic authorization-api-authentication --from-literal=AUTHORIZATION_API_BEARER_TOKEN="$AUTHORIZATION_API_BEARER_TOKEN"
+kubectl create secret -n tts-ns generic access-evaluation-api-authentication --from-literal=ACCESS_EVALUATION_API_BEARER_TOKEN="$ACCESS_EVALUATION_API_BEARER_TOKEN"
 
 kubectl create configmap tts-public-key --from-literal=jwks="$JWKS" -n alpha-stocks
 
@@ -49,5 +49,5 @@ kubectl create configmap config --from-file=config.yaml=configs/config.yaml -n t
   
 kubectl apply -f roles/
 kubectl apply -f service-accounts/
-kubectl apply -f deployments/
+envsubst < ./deployments/txn-token-deployment.yaml | kubectl apply -f -
 kubectl apply -f services

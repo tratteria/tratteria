@@ -33,11 +33,13 @@ spec:
                 secretKeyRef:
                   name: rsa-keys
                   key: KeyID
-            - name: AUTHORIZATION_API_BEARER_TOKEN
+            - name: ENABLE_ACCESS_EVALUATION
+              value: "${ENABLE_ACCESS_EVALUATION}"
+            - name: ACCESS_EVALUATION_API_BEARER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: authorization-api-authentication
-                  key: AUTHORIZATION_API_BEARER_TOKEN
+                  name: access-evaluation-api-authentication
+                  key: ACCESS_EVALUATION_API_BEARER_TOKEN
           image: tratteria
           name: tratteria
           imagePullPolicy: Never

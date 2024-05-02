@@ -24,7 +24,8 @@ clientAuthenticationMethods:
     clientId: example-client
     providerURL: http://example.org/oidcprovider
     subjectField: email
-authorizationAPI:
+enableAccessEvaluation: true
+accessEvaluationAPI:
   endpoint: https://example.authzen.com/access/v1/evaluation
   authentication:
     method: Bearer

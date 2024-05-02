@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
@@ -15,6 +16,8 @@ import (
 
 const CONFIG_FILE_PATH = "/app/config/config.yaml"
 
+type BoolFromString bool
+
 type AppConfig struct {
 	Issuer                      string                       `yaml:"issuer"`
 	Audience                    string                       `yaml:"audience"`
@@ -22,7 +25,8 @@ type AppConfig struct {
 	Keys                        *Keys                        `yaml:"keys"`
 	Spiffe                      *Spiffe                      `yaml:"spiffe"`
 	ClientAuthenticationMethods *ClientAuthenticationMethods `yaml:"clientAuthenticationMethods"`
-	AuthorizationAPI            *AuthorizationAPI            `yaml:"authorizationAPI"`
+	EnableAccessEvaluation      BoolFromString               `yaml:"enableAccessEvaluation"`
+	AccessEvaluationAPI         *AccessEvaluationAPI         `yaml:"accessEvaluationAPI,omitempty"`
 }
 
 type Token struct {
@@ -102,18 +106,18 @@ type Keys struct {
 	KeyID      string `yaml:"keyID"`
 }
 
-type AuthorizationAPI struct {
-	Endpoint       string                          `yaml:"endpoint"`
-	Authentication *AuthorizationAPIAuthentication `yaml:"authentication"`
-	RequestMapping map[string]interface{}          `yaml:"requestMapping"`
+type AccessEvaluationAPI struct {
+	Endpoint       string                             `yaml:"endpoint,omitempty"`
+	Authentication *AccessEvaluationAPIAuthentication `yaml:"authentication,omitempty"`
+	RequestMapping map[string]interface{}             `yaml:"requestMapping,omitempty"`
 }
 
-type AuthorizationAPIAuthentication struct {
-	Method string                               `yaml:"method"`
-	Token  *AuthorizationAPIAuthenticationToken `yaml:"token"`
+type AccessEvaluationAPIAuthentication struct {
+	Method string                                  `yaml:"method,omitempty"`
+	Token  *AccessEvaluationAPIAuthenticationToken `yaml:"token,omitempty"`
 }
 
-type AuthorizationAPIAuthenticationToken struct {
+type AccessEvaluationAPIAuthenticationToken struct {
 	Value string `yaml:"value"`
 }
 
@@ -136,11 +140,11 @@ func convertMap(m map[interface{}]interface{}) map[string]interface{} {
 	return result
 }
 
-func (a *AuthorizationAPI) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (a *AccessEvaluationAPI) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var raw struct {
-		Endpoint       string                          `yaml:"endpoint"`
-		Authentication *AuthorizationAPIAuthentication `yaml:"authentication"`
-		RequestMapping interface{}                     `yaml:"requestMapping"`
+		Endpoint       string                             `yaml:"endpoint"`
+		Authentication *AccessEvaluationAPIAuthentication `yaml:"authentication"`
+		RequestMapping interface{}                        `yaml:"requestMapping"`
 	}
 
 	if err := unmarshal(&raw); err != nil {
@@ -157,6 +161,48 @@ func (a *AuthorizationAPI) UnmarshalYAML(unmarshal func(interface{}) error) erro
 		a.RequestMapping = nil
 	default:
 		return fmt.Errorf("unsupported type for requestMapping: %T", v)
+	}
+
+	return nil
+}
+
+func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var tmp interface{}
+	if err := unmarshal(&tmp); err != nil {
+		return err
+	}
+
+	switch value := tmp.(type) {
+	case bool:
+		*b = BoolFromString(value)
+	case string:
+		envVarRegex := regexp.MustCompile(`^\$\{([^}]+)\}$`)
+		matches := envVarRegex.FindStringSubmatch(value)
+
+		if len(matches) > 1 {
+			envVarName := matches[1]
+			if envValue, exists := os.LookupEnv(envVarName); exists {
+				boolVal, err := strconv.ParseBool(envValue)
+				if err != nil {
+					return fmt.Errorf("error parsing boolean from environment variable %s: %v", envVarName, err)
+				}
+
+				*b = BoolFromString(boolVal)
+
+				return nil
+			}
+
+			return fmt.Errorf("environment variable %s not set", envVarName)
+		}
+
+		boolVal, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("error parsing boolean from string: %v", err)
+		}
+
+		*b = BoolFromString(boolVal)
+	default:
+		return fmt.Errorf("invalid type for the bool variable, expected bool or string, got %T", tmp)
 	}
 
 	return nil
@@ -206,7 +252,9 @@ func validateConfig(cfg *AppConfig) {
 
 	validateOIDC(cfg.ClientAuthenticationMethods.OIDC)
 
-	validateAuthorizationAPI(cfg.AuthorizationAPI)
+	if cfg.EnableAccessEvaluation {
+		validateAccessEvaluationAPI(cfg.AccessEvaluationAPI)
+	}
 }
 
 func validateOIDC(oidc *OIDC) {
@@ -227,7 +275,7 @@ func validateOIDC(oidc *OIDC) {
 	}
 }
 
-func validateAuthorizationAPI(api *AuthorizationAPI) {
+func validateAccessEvaluationAPI(api *AccessEvaluationAPI) {
 	if api == nil {
 		panic("AuthorizationAPI configuration must be provided")
 	}
