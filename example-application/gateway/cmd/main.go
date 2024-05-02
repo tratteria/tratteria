@@ -22,18 +22,23 @@ func main() {
 		}
 	}()
 
-	gatewayConfig := config.GetGatewayConfig()
-	
+	appConfig := config.GetAppConfig()
+
 	oauth2Config := config.GetOauth2Config()
 	oidcProvider := config.GetOIDCProvider(logger)
-	
-	spireJwtSource := config.GetSpireJwtSource(logger)
+
+	spireJwtSource, err := config.GetSpireJwtSource()
+	if err != nil {
+		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
+	}
+
+	logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
 
 	defer spireJwtSource.Close()
 
 	httpClient := &http.Client{}
 
-	router := handler.SetupRoutes(gatewayConfig, oauth2Config, oidcProvider, spireJwtSource, httpClient, logger)
+	router := handler.SetupRoutes(appConfig, oauth2Config, oidcProvider, spireJwtSource, httpClient, logger)
 
 	srv := &http.Server{
 		Addr:         "0.0.0.0:30000",

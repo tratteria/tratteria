@@ -29,7 +29,7 @@ type GatewayConfig struct {
 	SpiffeIDs          *spiffeIDs
 }
 
-func GetGatewayConfig() *GatewayConfig {
+func GetAppConfig() *GatewayConfig {
 	return &GatewayConfig{
 		TxnTokenServiceURL: getEnv("TTS_URL"),
 		StocksServiceURL:   getEnv("STOCKS_SERVICE_URL"),
@@ -70,9 +70,9 @@ func GetOIDCProvider(logger *zap.Logger) *oidc.Provider {
 		}
 
 		logger.Error("Failed to connect to the OIDC provider.",
-		zap.Int("attempt", i+1),
-		zap.String("retrying_in", delay.String()),
-		zap.Error(err))
+			zap.Int("attempt", i+1),
+			zap.String("retrying_in", delay.String()),
+			zap.Error(err))
 		time.Sleep(delay)
 
 		delay *= 2
@@ -83,17 +83,16 @@ func GetOIDCProvider(logger *zap.Logger) *oidc.Provider {
 	panic(fmt.Sprintf("failed to connect to the OIDC provider after %d attempts", OIDC_PROVIDER_INITILIZATION_MAX_RETRIES))
 }
 
-func GetSpireJwtSource(logger *zap.Logger) *workloadapi.JWTSource {
-	ctx := context.Background()
+func GetSpireJwtSource() (*workloadapi.JWTSource, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	jwtSource, err := workloadapi.NewJWTSource(ctx)
 	if err != nil {
-		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
+		return nil, err
 	}
 
-	logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
-
-	return jwtSource
+	return jwtSource, nil
 }
 
 func getEnv(key string) string {

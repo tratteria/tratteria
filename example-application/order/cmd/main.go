@@ -47,9 +47,14 @@ func main() {
 
 	defer db.Close()
 
-	orderConfig := config.GetOrderConfig()
+	appConfig := config.GetAppConfig()
 
-	spireJwtSource := config.GetSpireJwtSource(logger)
+	spireJwtSource, err := config.GetSpireJwtSource()
+	if err != nil {
+		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
+	}
+
+	logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
 
 	defer spireJwtSource.Close()
 
@@ -59,7 +64,7 @@ func main() {
 		Router:         mux.NewRouter(),
 		DB:             db,
 		HTTPClient:     &http.Client{},
-		Config:         orderConfig,
+		Config:         appConfig,
 		SpireJwtSource: spireJwtSource,
 		TraTsVerifer:   traTsVerifier,
 		Logger:         logger,
