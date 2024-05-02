@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/stockserrors"
 	"go.uber.org/zap"
 )
 
@@ -157,7 +158,7 @@ func (s *Service) UpdateUserStock(username string, stock StockItem, updateType U
 	case Sell:
 		newQuantity -= quantity
 		if newQuantity < 0 {
-			return UpdateDetails{}, ErrInvalidUpdateRequest
+			return UpdateDetails{}, stockserrors.ErrInvalidUpdateRequest
 		}
 	}
 

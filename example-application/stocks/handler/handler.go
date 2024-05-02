@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/service"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/stocks/pkg/stockserrors"
 	"github.com/gorilla/mux"
 
 	"go.uber.org/zap"
@@ -115,7 +116,7 @@ func (h *Handlers) GetStockDetailsHandler(w http.ResponseWriter, r *http.Request
 
 	stock, err := h.Service.GetStockDetails(username, id)
 	if err != nil {
-		if errors.Is(err, service.ErrStockNotFound) {
+		if errors.Is(err, stockserrors.ErrStockNotFound) {
 			h.Logger.Error("Stock not found", zap.Int("id", id))
 			http.Error(w, "Stock not found", http.StatusNotFound)
 
@@ -166,7 +167,7 @@ func (h *Handlers) UpdateUserStockHandler(w http.ResponseWriter, r *http.Request
 
 	stock, err := h.Service.GetStockDetails(username, updateRequest.StockID)
 	if err != nil {
-		if errors.Is(err, service.ErrStockNotFound) {
+		if errors.Is(err, stockserrors.ErrStockNotFound) {
 			h.Logger.Error("Stock provided in update-user-stock request not found.", zap.Int("stock-id", updateRequest.StockID))
 			http.Error(w, "Stock not found", http.StatusBadRequest)
 
@@ -195,7 +196,7 @@ func (h *Handlers) UpdateUserStockHandler(w http.ResponseWriter, r *http.Request
 
 	orderDetails, err := h.Service.UpdateUserStock(username, stock, updateRequest.OrderType, updateRequest.Quantity)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidUpdateRequest) {
+		if errors.Is(err, stockserrors.ErrInvalidUpdateRequest) {
 			h.Logger.Error("Invalid update request.", zap.Any("update-request", updateRequest))
 			http.Error(w, "Invalid update request", http.StatusBadRequest)
 

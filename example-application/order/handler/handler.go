@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/ordererrors"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/service"
 	"github.com/gorilla/mux"
 
@@ -84,7 +85,7 @@ func (h *Handlers) GetOrderDetailsHandler(w http.ResponseWriter, r *http.Request
 
 	stock, err := h.Service.GetOrderDetails(username, id)
 	if err != nil {
-		if errors.Is(err, service.ErrOrderNotFound) {
+		if errors.Is(err, ordererrors.ErrOrderNotFound) {
 			h.Logger.Error("Order not found", zap.String("id", id))
 			http.Error(w, "Order not found", http.StatusNotFound)
 
