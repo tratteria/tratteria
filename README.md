@@ -1,5 +1,72 @@
 # Tratteria
+Tratteria is an open source Transaction Tokens (TraTs) Service. The Transaction Tokens draft is defined [here](https://datatracker.ietf.org/doc/draft-ietf-oauth-transaction-tokens/). The directory contains of a fairly elaborate sample application to demonstrate the use of Tratteria, and the Tratteria service itself. The sample application has the following architecture:
 
+~~~
+
+                                    ╔════════════════════════╗                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║ Tratteria (Transaction ║                                                              
+                                    ║    Tokens Service)     ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ╚════════════════════════╝                                                              
+                                                 ▲                                                                          
+                      ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                                                 │                                         ┌────────────────────────┐      │
+                      │                          │                                         │                        │       
+                                                 │                                         │                        │      │
+                      │                          │                                         │                        │       
+                                                 │                                         │                        │      │
+                      │                          │                          ┌─────────────▶│     Stocks Service     │       
+                                                 │                          │              │                        │      │
+                      │                          │                          │              │                        │       
+                                                 │                          │              │                        │      │
+┌────────────┐        │                          │                          │              │                        │       
+│            │                      ┌────────────────────────┐              │              └────────────────────────┘      │
+│            │        │             │                        │              │                                               
+│            │                      │                        │              │                                              │
+│            │        │             │                        │              │                                               
+│            │                      │                        │              │                                              │
+│    User    │────────┼────────────▶│      API Gateway       │──────────────┤                                               
+│            │                      │                        │              │                                              │
+│            │        │             │                        │              │                                               
+│            │                      │                        │              │                                              │
+│            │        │             │                        │              │                                               
+│            │                      └────────────────────────┘              │                                              │
+└────────────┘        │                          │                          │              ┌────────────────────────┐       
+       │                                         │                          │              │                        │      │
+       │              │                          │                          │              │                        │       
+       │                                         │                          │              │                        │      │
+       │              │                          │                          │              │                        │       
+       │                                         │                          └─────────────▶│     Order Service      │      │
+       │              │                          │                                         │                        │       
+       │                                         │                                         │                        │      │
+       │              │                          │                                         │                        │       
+       │                                         │                                         │                        │      │
+       │              │                          │                                         └────────────────────────┘       
+       │                                         │                                                                         │
+       │              │                          │                                                              Sample App  
+       │               ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+       │                                         ▼                                                                          
+       │                            ┌────────────────────────┐                                                              
+       │                            │                        │                                                              
+       │                            │                        │                                                              
+       │                            │                        │                                                              
+       │                            │   Dex OpenID Connect   │                                                              
+       └───────────────────────────▶│   Identity Provider    │                                                              
+                                    │                        │                                                              
+                                    │                        │                                                              
+                                    │                        │                                                              
+                                    │                        │                                                              
+                                    └────────────────────────┘                                                              
+
+~~~
+
+As shown in the diagram above, the sample app integrates with the Tratteria service to obtain TraTs that it can use to assure identity and context in its calls downstream, to the Order and Stocks services. Although not shown in this sample application, those services may forward the same TraTs they receive from the gateway to any downstream services they call.
 
 ## Deployment
 ### Configuration
