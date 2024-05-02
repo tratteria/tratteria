@@ -5,11 +5,11 @@
 <div class="search-container" [class.centered]="!hasSearched">
   <div class="search-wrapper">
       <i class="fas fa-search search-icon"></i>
-      <input class="search-input" type="text" [(ngModel)]="query" (input)="onSearch($event)" placeholder="Search stocks...">
+      <input class="search-input" type="text" [formControl]="searchInput" placeholder="Search stocks...">
   </div>
 </div>
 
-<div class="results-container">
+<div class="results-container" *ngIf="hasSearched">
   <ul class="results-list">
     <li *ngFor="let searchItem of searchResult" class="result-item"
         (mouseenter)="isMouseReallyOver($event, searchItemElement) ? searchItemElement.classList.add('hover-effect') : null"
@@ -36,4 +36,3 @@
     </li>
   </ul>
 </div>
-
