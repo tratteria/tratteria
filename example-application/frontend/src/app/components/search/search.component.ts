@@ -1,10 +1,12 @@
 import { Component, OnDestroy, HostListener } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { FormControl } from '@angular/forms';
+import { Subject, auditTime, takeUntil } from 'rxjs';
 import { StockService } from '../../services/stock.service';
 import { Stock } from '../../models/stock.model';
 import { SearchItem } from '../../models/search-item.model';
 import { Router } from '@angular/router';
+
+const AUDIT_INTERVAL_MS = 500;
 
 @Component({
   selector: 'app-search',
@@ -15,32 +17,34 @@ export class SearchComponent implements OnDestroy {
   searchResult: SearchItem[] = [];
   selectedStock: Stock | null = null;
   hasSearched: boolean = false;
-  query: string = '';
+  searchInput = new FormControl();
   private destroy$ = new Subject<void>();
+  query: string = '';
 
   lastMouseX = 0;
   lastMouseY = 0;
 
-  constructor(
-    private stockService: StockService,
-    private router: Router
-  ) { }
+  constructor(private stockService: StockService, private router: Router) {
+    this.searchInput.valueChanges.pipe(
+      auditTime(AUDIT_INTERVAL_MS),
+      takeUntil(this.destroy$)
+    ).subscribe(query => {
+      this.query = query.trim();
+      this.hasSearched = this.query.length > 0;
+      
+      if (this.hasSearched) {
+        this.stockService.searchStocks(this.query).subscribe(results => {
+          this.searchResult = results;
+        });
+      } else {
+        this.searchResult = [];
+      }
+    });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  onSearch(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.query = target.value.trim();
-    this.hasSearched = this.query.length > 0;
-
-    this.stockService.searchStocks(this.query)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((results) => {
-        this.searchResult = results;
-      });
   }
 
   onSelectStock(stockId: string): void {
@@ -49,7 +53,7 @@ export class SearchComponent implements OnDestroy {
     } else {
       this.stockService.getStockDetails(stockId)
         .pipe(takeUntil(this.destroy$))
-        .subscribe((stockDetails) => {
+        .subscribe(stockDetails => {
           this.selectedStock = stockDetails;
         });
     }
@@ -58,13 +62,13 @@ export class SearchComponent implements OnDestroy {
   onBuyStock(stockId: string): void {
     this.router.navigate(['/order'], { queryParams: { action: 'Buy', stockId: stockId } });
   }
-  
+
   onSellStock(stockId: string): void {
     this.router.navigate(['/order'], { queryParams: { action: 'Sell', stockId: stockId } });
   }
 
   @HostListener('document:mousemove', ['$event'])
-  onMouseMove(e: MouseEvent) {
+  onMouseMove(e: MouseEvent): void {
     this.lastMouseX = e.clientX;
     this.lastMouseY = e.clientY;
   }
