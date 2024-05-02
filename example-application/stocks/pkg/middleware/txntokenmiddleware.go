@@ -163,8 +163,8 @@ func verifyUpdateUserStockAuthorizationContexts(purpose purpose, authContext map
 }
 
 func verifyRequestContexts(token *trats.TxnToken, r *http.Request) error {
-	if r.Header.Get("x-user-name") != token.Subject.Email {
-		return fmt.Errorf("access denied: the user in the header does not match the expected user from the txn token; expected '%s', found '%s'", token.Subject.Email, r.Header.Get("x-user-name"))
+	if r.Header.Get("alpha-stock-user-name") != token.Subject.Email {
+		return fmt.Errorf("access denied: the user in the header does not match the expected user from the txn token; expected '%s', found '%s'", token.Subject.Email, r.Header.Get("alpha-stock-user-name"))
 	}
 
 	pathTemplate, err := mux.CurrentRoute(r).GetPathTemplate()

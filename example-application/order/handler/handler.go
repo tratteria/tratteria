@@ -35,7 +35,7 @@ func (h *Handlers) OrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	var orderRequest OrderRequest
 
-	username := r.Header.Get("x-user-name")
+	username := r.Header.Get("alpha-stock-user-name")
 	if username == "" {
 		h.Logger.Error("Unable to extract username from the header of the order request.")
 		http.Error(w, "Unable to extract username from the header", http.StatusInternalServerError)
@@ -70,7 +70,7 @@ func (h *Handlers) OrderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetOrderDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.Header.Get("x-user-name")
+	username := r.Header.Get("alpha-stock-user-name")
 	if username == "" {
 		h.Logger.Error("Unable to extract username from the header of the order request.")
 		http.Error(w, "Unable to extract username from the header", http.StatusInternalServerError)

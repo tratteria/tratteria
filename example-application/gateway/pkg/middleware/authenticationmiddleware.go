@@ -60,7 +60,7 @@ func getAuthenticationMiddleware(oauth2Config oauth2.Config, oidcProvider *oidc.
 
 			r = r.WithContext(ctx)
 
-			r.Header.Set("x-user-name", claims.Email)
+			r.Header.Set("alpha-stock-user-name", claims.Email)
 
 			next.ServeHTTP(w, r)
 		})
