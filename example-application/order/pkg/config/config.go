@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/order/pkg/trats"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
-	"go.uber.org/zap"
 )
 
 type spiffeIDs struct {
@@ -34,7 +34,7 @@ type OrderConfig struct {
 	Toggles          *toggles
 }
 
-func GetOrderConfig() *OrderConfig {
+func GetAppConfig() *OrderConfig {
 	return &OrderConfig{
 		StocksServiceURL: getEnv("STOCKS_SERVICE_URL"),
 		SpiffeIDs: &spiffeIDs{
@@ -52,17 +52,16 @@ func GetOrderConfig() *OrderConfig {
 	}
 }
 
-func GetSpireJwtSource(logger *zap.Logger) *workloadapi.JWTSource {
-	ctx := context.Background()
+func GetSpireJwtSource() (*workloadapi.JWTSource, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	jwtSource, err := workloadapi.NewJWTSource(ctx)
 	if err != nil {
-		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
+		return nil, err
 	}
 
-	logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
-
-	return jwtSource
+	return jwtSource, nil
 }
 
 func GetTraTsVerifier() *trats.Verifier {

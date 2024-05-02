@@ -302,7 +302,8 @@ func validateAccessEvaluationAPI(api *AccessEvaluationAPI) {
 }
 
 func GetSpireJwtSource(endpointSocket string) (*workloadapi.JWTSource, error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	jwtSource, err := workloadapi.NewJWTSource(ctx, workloadapi.WithClientOptions(workloadapi.WithAddr(endpointSocket)))
 	if err != nil {

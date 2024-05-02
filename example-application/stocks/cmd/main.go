@@ -47,9 +47,14 @@ func main() {
 
 	defer db.Close()
 
-	stocksConfig := config.GetStocksConfig()
+	appConfig := config.GetAppConfig()
 
-	spireJwtSource := config.GetSpireJwtSource(logger)
+	spireJwtSource, err := config.GetSpireJwtSource()
+	if err != nil {
+		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
+	}
+
+	logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
 
 	defer spireJwtSource.Close()
 
@@ -58,13 +63,13 @@ func main() {
 	app := &App{
 		Router:         mux.NewRouter(),
 		DB:             db,
-		Config:         stocksConfig,
+		Config:         appConfig,
 		SpireJwtSource: spireJwtSource,
 		TraTsVerifer:   traTsVerifier,
 		Logger:         logger,
 	}
 
-	middleware := middleware.GetMiddleware(stocksConfig, app.SpireJwtSource, app.TraTsVerifer, app.Logger)
+	middleware := middleware.GetMiddleware(appConfig, app.SpireJwtSource, app.TraTsVerifer, app.Logger)
 
 	app.Router.Use(middleware)
 

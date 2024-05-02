@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -68,7 +69,10 @@ func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.
 
 	ctx := r.Context()
 
-	oauth2Token, err := oauth2Config.Exchange(ctx, dexCodeExchangeRequest.Code)
+    tokenExchangeCtx, cancelTokenExchange := context.WithTimeout(ctx, 5*time.Second)
+    defer cancelTokenExchange()
+
+	oauth2Token, err := oauth2Config.Exchange(tokenExchangeCtx, dexCodeExchangeRequest.Code)
 	if err != nil {
 		logger.Error("Failed to exchange the authorization code for a token.", zap.Error(err))
 		http.Error(w, "Failed to exchange the authorization code for a token", http.StatusInternalServerError)
@@ -89,7 +93,10 @@ func handleOidcCodeExchange(w http.ResponseWriter, r *http.Request, logger *zap.
 	}
 	verifier := oidcProvider.Verifier(oidcConfig)
 
-	idToken, err := verifier.Verify(ctx, rawIDToken)
+	verificationCtx, cancelVerification := context.WithTimeout(ctx, 5*time.Second)
+    defer cancelVerification()
+
+	idToken, err := verifier.Verify(verificationCtx, rawIDToken)
 	if err != nil {
 		logger.Error("Failed to verify OIDC ID token.", zap.Error(err))
 		http.Error(w, "Failed to verify ID token", http.StatusInternalServerError)
