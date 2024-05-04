@@ -2,7 +2,6 @@
 Tratteria is an open source Transaction Tokens (TraTs) Service. The Transaction Tokens draft is defined [here](https://datatracker.ietf.org/doc/draft-ietf-oauth-transaction-tokens/). The directory contains of a fairly elaborate sample application to demonstrate the use of Tratteria, and the Tratteria service itself. The sample application has the following architecture:
 
 ~~~
-
                                     ╔════════════════════════╗                                                              
                                     ║                        ║                                                              
                                     ║                        ║                                                              
@@ -27,16 +26,16 @@ Tratteria is an open source Transaction Tokens (TraTs) Service. The Transaction 
                                                  │                          │              │                        │      │
 ┌────────────┐        │                          │                          │              │                        │       
 │            │                      ┌────────────────────────┐              │              └────────────────────────┘      │
-│            │        │             │                        │              │                                               
-│            │                      │                        │              │                                              │
-│            │        │             │                        │              │                                               
-│            │                      │                        │              │                                              │
-│    User    │────────┼────────────▶│      API Gateway       │──────────────┤                                               
-│            │                      │                        │              │                                              │
-│            │        │             │                        │              │                                               
-│            │                      │                        │              │                                              │
-│            │        │             │                        │              │                                               
-│            │                      └────────────────────────┘              │                                              │
+│            │        │             │                        │              │                           ▲                   
+│            │                      │                        │              │                           │                  │
+│            │        │             │                        │              │                           │                   
+│            │                      │                        │              │                           │                  │
+│    User    │────────┼────────────▶│      API Gateway       │──────────────┤                           │                   
+│            │                      │                        │              │                           │                  │
+│            │        │             │                        │              │                           │                   
+│            │                      │                        │              │                           │                  │
+│            │        │             │                        │              │                           │                   
+│            │                      └────────────────────────┘              │                           │                  │
 └────────────┘        │                          │                          │              ┌────────────────────────┐       
        │                                         │                          │              │                        │      │
        │              │                          │                          │              │                        │       
@@ -62,11 +61,9 @@ Tratteria is an open source Transaction Tokens (TraTs) Service. The Transaction 
                                     │                        │                                                              
                                     │                        │                                                              
                                     │                        │                                                              
-                                    └────────────────────────┘                                                              
+                                    └────────────────────────┘                                                              ~~~
 
-~~~
-
-As shown in the diagram above, the sample app integrates with the Tratteria service to obtain TraTs that it can use to assure identity and context in its calls downstream, to the Order and Stocks services. Although not shown in this sample application, those services may forward the same TraTs they receive from the gateway to any downstream services they call.
+As shown in the diagram above, the API Gateway in the sample app integrates with the Tratteria service to obtain TraTs that it can use to assure identity and context in its calls downstream, to the Order and Stocks services. The Order Service also calls the Stocks Service and passes the TraT it received from the API Gateway to the Stocks Service. Because TraTs can be passed between downstream services, they can assure identity and call context in arbitrarily deep call chains. The short-lived nature of TraTs makes them relatively immune to replay attacks (unless the replay happens really quickly, and the replay is exactly the same as the information in the TraT).
 
 ## Deployment
 ### Configuration
