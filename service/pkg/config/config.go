@@ -1,7 +1,6 @@
 package config
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"reflect"
@@ -10,7 +9,6 @@ import (
 	"time"
 
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
-	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,7 +19,7 @@ type AppConfig struct {
 	Audience                    string                       `yaml:"audience"`
 	Token                       Token                        `yaml:"token"`
 	Keys                        *Keys                        `yaml:"keys"`
-	Spiffe                      *Spiffe                      `yaml:"spiffe"`
+	Spiffe                      *Spiffe                      `yaml:"spiffe,omitempty"`
 	ClientAuthenticationMethods *ClientAuthenticationMethods `yaml:"clientAuthenticationMethods"`
 	EnableAccessEvaluation      BoolFromString               `yaml:"enableAccessEvaluation"`
 	AccessEvaluationAPI         *AccessEvaluationAPI         `yaml:"accessEvaluationAPI,omitempty"`
@@ -242,15 +240,28 @@ func validateConfig(cfg *AppConfig) {
 		panic("keyID must be provided")
 	}
 
-	if len(cfg.Spiffe.AuthorizedServiceIDs) == 0 {
-		panic("authorized services spifee ids must be specified")
-	}
+	validateSpiffe(cfg.Spiffe)
 
 	validateOIDC(cfg.ClientAuthenticationMethods.OIDC)
 
 	if cfg.EnableAccessEvaluation {
 		validateAccessEvaluationAPI(cfg.AccessEvaluationAPI)
 	}
+}
+
+func validateSpiffe(spiffe *Spiffe) {
+	if spiffe == nil {
+		return
+	}
+
+	if len(spiffe.AuthorizedServiceIDs) == 0 {
+		panic("authorized services Spiffe IDs must be specified")
+	}
+
+	if spiffe.EndpointSocket == "" {
+		panic("endpoint socket must be provided for Spiffe")
+	}
+
 }
 
 func validateOIDC(oidc *OIDC) {
@@ -299,18 +310,6 @@ func validateAccessEvaluationAPI(api *AccessEvaluationAPI) {
 	if len(api.RequestMapping) == 0 {
 		panic("AuthorizationAPI request mapping must be provided and cannot be empty")
 	}
-}
-
-func GetSpireJwtSource(endpointSocket string) (*workloadapi.JWTSource, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	jwtSource, err := workloadapi.NewJWTSource(ctx, workloadapi.WithClientOptions(workloadapi.WithAddr(endpointSocket)))
-	if err != nil {
-		return nil, err
-	}
-
-	return jwtSource, nil
 }
 
 func extractEnvVarName(s string) (bool, string) {
