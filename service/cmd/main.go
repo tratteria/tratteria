@@ -15,6 +15,7 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/spire"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
 )
 
@@ -56,14 +57,16 @@ func main() {
 		accessEvaluator = &accessevaluation.NoOpAccessEvaluator{}
 	}
 
-	spireJwtSource, err := config.GetSpireJwtSource(appConfig.Spiffe.EndpointSocket)
+	spireJwtSource, err := spire.GetSpireJwtSource(appConfig, logger)
 	if err != nil {
 		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
 	}
 
-	logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
+	if spireJwtSource != nil {
+		logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
 
-	defer spireJwtSource.Close()
+		defer spireJwtSource.Close()
+	}
 
 	subjectTokenHandlers := subjecttokenhandler.GetTokenHandlers(appConfig.ClientAuthenticationMethods, logger)
 

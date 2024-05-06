@@ -77,8 +77,10 @@ func CombineMiddleware(middleware ...func(http.Handler) http.Handler) func(http.
 }
 
 func GetMiddleware(txnTokenConfig *config.AppConfig, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) func(http.Handler) http.Handler {
-	middlewareList := []func(http.Handler) http.Handler{
-		spiffeMiddleware(txnTokenConfig, spireJwtSource, logger),
+	middlewareList := make([]func(http.Handler) http.Handler, 0)
+
+	if spireJwtSource != nil {
+		middlewareList = append(middlewareList, spiffeMiddleware(txnTokenConfig, spireJwtSource, logger))
 	}
 
 	return CombineMiddleware(middlewareList...)
