@@ -30,12 +30,8 @@ func GetSpireJwtSource(appConfig *config.AppConfig, logger *zap.Logger) (*worklo
 
 	spireJwtSource, err := NewSpireJwtSource(appConfig.Spiffe.EndpointSocket)
 	if err != nil {
-		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
-
 		return nil, err
 	}
-
-	logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
 
 	return spireJwtSource, nil
 }

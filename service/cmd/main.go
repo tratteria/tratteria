@@ -59,10 +59,12 @@ func main() {
 
 	spireJwtSource, err := spire.GetSpireJwtSource(appConfig, logger)
 	if err != nil {
-		logger.Fatal("Error getting SPIRE JWTSource:", zap.Error(err))
+		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
 	}
 
 	if spireJwtSource != nil {
+		logger.Info("Successfully created SPIRE JWTSource for fetching JWT-SVIDs.")
+
 		defer spireJwtSource.Close()
 	}
 
