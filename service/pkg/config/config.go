@@ -261,7 +261,6 @@ func validateSpiffe(spiffe *Spiffe) {
 	if spiffe.EndpointSocket == "" {
 		panic("endpoint socket must be provided for Spiffe")
 	}
-
 }
 
 func validateOIDC(oidc *OIDC) {

@@ -61,7 +61,7 @@ func main() {
 	if err != nil {
 		logger.Fatal("Error getting SPIRE JWTSource:", zap.Error(err))
 	}
-	
+
 	if spireJwtSource != nil {
 		defer spireJwtSource.Close()
 	}
