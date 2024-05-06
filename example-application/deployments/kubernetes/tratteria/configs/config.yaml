@@ -6,6 +6,11 @@ keys:
   privateKey: ${PRIVATE_KEY}
   jwks: ${JWKS}
   keyID: ${KEY_ID}
+spiffe:
+  endpoint_socket: unix:///run/spire/sockets/agent.sock
+  serviceID: spiffe://alphastocks.com/tts
+  authorizedServiceIDs:
+    - spiffe://alphastocks.com/gateway
 clientAuthenticationMethods:
   OIDC:
     clientId: alpha-stocks-client
