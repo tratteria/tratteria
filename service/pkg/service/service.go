@@ -12,6 +12,7 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 )
@@ -52,7 +53,7 @@ type TokenResponse struct {
 	AccessToken     string           `json:"access_token"`
 }
 
-func (s *Service) GetJwks() keys.JWKS {
+func (s *Service) GetJwks() jwk.Set {
 	return keys.GetJWKS()
 }
 

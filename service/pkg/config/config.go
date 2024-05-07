@@ -18,7 +18,7 @@ type AppConfig struct {
 	Issuer                      string                       `yaml:"issuer"`
 	Audience                    string                       `yaml:"audience"`
 	Token                       Token                        `yaml:"token"`
-	Keys                        *Keys                        `yaml:"keys"`
+	Keys                        *Keys                        `yaml:"keys,omitempty"`
 	Spiffe                      *Spiffe                      `yaml:"spiffe,omitempty"`
 	ClientAuthenticationMethods *ClientAuthenticationMethods `yaml:"clientAuthenticationMethods"`
 	EnableAccessEvaluation      BoolFromString               `yaml:"enableAccessEvaluation"`
@@ -228,17 +228,7 @@ func validateConfig(cfg *AppConfig) {
 		panic("audience must not be empty")
 	}
 
-	if cfg.Keys.PrivateKey == "" {
-		panic("private key must be provided")
-	}
-
-	if cfg.Keys.JWKS == "" {
-		panic("key JWKS must be provided")
-	}
-
-	if cfg.Keys.KeyID == "" {
-		panic("keyID must be provided")
-	}
+	validateKeys(cfg.Keys)
 
 	validateSpiffe(cfg.Spiffe)
 
@@ -246,6 +236,24 @@ func validateConfig(cfg *AppConfig) {
 
 	if cfg.EnableAccessEvaluation {
 		validateAccessEvaluationAPI(cfg.AccessEvaluationAPI)
+	}
+}
+
+func validateKeys(keys *Keys) {
+	if keys == nil {
+		return
+	}
+
+	if keys.PrivateKey == "" {
+		panic("private key must be provided")
+	}
+
+	if keys.JWKS == "" {
+		panic("key JWKS must be provided")
+	}
+
+	if keys.KeyID == "" {
+		panic("keyID must be provided")
 	}
 }
 

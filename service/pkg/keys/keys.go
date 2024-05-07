@@ -1,42 +1,39 @@
 package keys
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
+	"github.com/lestrrat-go/jwx/jwk"
 )
-
-type JWKS struct {
-	Keys []jwk `json:"keys"`
-}
-
-type jwk struct {
-	Kty string `json:"kty"`
-	Use string `json:"use"`
-	Kid string `json:"kid"`
-	Alg string `json:"alg"`
-	N   string `json:"n"`
-	E   string `json:"e"`
-}
 
 var (
 	privateKey *rsa.PrivateKey
-	jwks       JWKS
 	kid        string
+	keySet     jwk.Set
 )
 
 func Initialize(appConfig *config.AppConfig) error {
+	if appConfig.Keys == nil {
+		return generateKeys()
+	} else {
+		return parseKeys(appConfig)
+	}
+}
+
+func parseKeys(appConfig *config.AppConfig) error {
+	var err error
 	kid = appConfig.Keys.KeyID
 
-	err := json.Unmarshal([]byte(appConfig.Keys.JWKS), &jwks)
+	keySet, err = jwk.Parse([]byte(appConfig.Keys.JWKS))
 	if err != nil {
-		return fmt.Errorf("error unmarshalling JWKS: %w", err)
+		return fmt.Errorf("error parsing JWKS: %w", err)
 	}
 
 	privateKeyPem, err := base64.StdEncoding.DecodeString(appConfig.Keys.PrivateKey)
@@ -66,6 +63,47 @@ func Initialize(appConfig *config.AppConfig) error {
 	return nil
 }
 
+func generateKeys() error {
+	var err error
+
+	privateKey, err = rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("failed to generate RSA private key: %w", err)
+	}
+
+	publicKey := privateKey.PublicKey
+	
+	jwkKey, err := jwk.New(&publicKey)
+	if err != nil {
+		return fmt.Errorf("failed to create JWK from public key: %w", err)
+	}
+
+	if err := jwkKey.Set(jwk.AlgorithmKey, "RS256"); err != nil {
+		return fmt.Errorf("failed to set algorithm for JWK: %w", err)
+	}
+
+	if err := jwkKey.Set(jwk.KeyUsageKey, "sig"); err != nil {
+		return fmt.Errorf("failed to set usage for JWK: %w", err)
+	}
+
+	kidBytes := make([]byte, 16)
+	if _, err := rand.Read(kidBytes); err != nil {
+		return fmt.Errorf("failed to generate random bytes for Key ID: %w", err)
+	}
+	
+	kid = base64.StdEncoding.EncodeToString(kidBytes)
+
+	if err := jwkKey.Set(jwk.KeyIDKey, kid); err != nil {
+		return fmt.Errorf("failed to set Key ID for JWK: %w", err)
+	}
+
+	keySet = jwk.NewSet()
+	
+	keySet.Add(jwkKey)
+
+	return nil
+}
+
 func GetPrivateKey() *rsa.PrivateKey {
 	return privateKey
 }
@@ -74,6 +112,6 @@ func GetKid() string {
 	return kid
 }
 
-func GetJWKS() JWKS {
-	return jwks
+func GetJWKS() jwk.Set {
+	return keySet
 }
