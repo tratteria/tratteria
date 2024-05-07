@@ -29,6 +29,7 @@ func Initialize(appConfig *config.AppConfig) error {
 
 func parseKeys(appConfig *config.AppConfig) error {
 	var err error
+
 	kid = appConfig.Keys.KeyID
 
 	keySet, err = jwk.Parse([]byte(appConfig.Keys.JWKS))
@@ -72,7 +73,7 @@ func generateKeys() error {
 	}
 
 	publicKey := privateKey.PublicKey
-	
+
 	jwkKey, err := jwk.New(&publicKey)
 	if err != nil {
 		return fmt.Errorf("failed to create JWK from public key: %w", err)
@@ -90,7 +91,7 @@ func generateKeys() error {
 	if _, err := rand.Read(kidBytes); err != nil {
 		return fmt.Errorf("failed to generate random bytes for Key ID: %w", err)
 	}
-	
+
 	kid = base64.StdEncoding.EncodeToString(kidBytes)
 
 	if err := jwkKey.Set(jwk.KeyIDKey, kid); err != nil {
@@ -98,7 +99,7 @@ func generateKeys() error {
 	}
 
 	keySet = jwk.NewSet()
-	
+
 	keySet.Add(jwkKey)
 
 	return nil
