@@ -15,14 +15,14 @@ import (
 const CONFIG_FILE_PATH = "/app/config/config.yaml"
 
 type AppConfig struct {
-	Issuer                      string                       `yaml:"issuer"`
-	Audience                    string                       `yaml:"audience"`
-	Token                       Token                        `yaml:"token"`
-	Keys                        *Keys                        `yaml:"keys,omitempty"`
-	Spiffe                      *Spiffe                      `yaml:"spiffe,omitempty"`
-	ClientAuthenticationMethods *ClientAuthenticationMethods `yaml:"clientAuthenticationMethods"`
-	EnableAccessEvaluation      BoolFromString               `yaml:"enableAccessEvaluation"`
-	AccessEvaluationAPI         *AccessEvaluationAPI         `yaml:"accessEvaluationAPI,omitempty"`
+	Issuer                 string               `yaml:"issuer"`
+	Audience               string               `yaml:"audience"`
+	Token                  Token                `yaml:"token"`
+	Keys                   *Keys                `yaml:"keys,omitempty"`
+	Spiffe                 *Spiffe              `yaml:"spiffe,omitempty"`
+	SubjectTokens          *SubjectTokens       `yaml:"clientAuthenticationMethods"`
+	EnableAccessEvaluation BoolFromString       `yaml:"enableAccessEvaluation"`
+	AccessEvaluationAPI    *AccessEvaluationAPI `yaml:"accessEvaluationAPI,omitempty"`
 }
 
 type Token struct {
