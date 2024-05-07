@@ -68,7 +68,7 @@ func main() {
 		defer spireJwtSource.Close()
 	}
 
-	subjectTokenHandlers := subjecttokenhandler.GetTokenHandlers(appConfig.ClientAuthenticationMethods, logger)
+	subjectTokenHandlers := subjecttokenhandler.GetTokenHandlers(appConfig.SubjectTokens, logger)
 
 	app := &App{
 		Router:               mux.NewRouter(),

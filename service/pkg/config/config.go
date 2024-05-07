@@ -86,14 +86,20 @@ func (s *Spiffe) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
-type ClientAuthenticationMethods struct {
-	OIDC *OIDC `yaml:"OIDC"`
+type SubjectTokens struct {
+	OIDC       *OIDC       `yaml:"OIDC,omitempty"`
+	SelfSigned *SelfSigned `yaml:"selfSigned,omitempty"`
 }
 
 type OIDC struct {
 	ClientID     string `yaml:"clientId"`
 	ProviderURL  string `yaml:"providerURL"`
 	SubjectField string `yaml:"subjectField"`
+}
+
+type SelfSigned struct {
+	JwksEndpoint string         `yaml:"jwksEndpoint,omitempty"`
+	Validate     BoolFromString `yaml:"validate"`
 }
 
 type Keys struct {
@@ -232,7 +238,7 @@ func validateConfig(cfg *AppConfig) {
 
 	validateSpiffe(cfg.Spiffe)
 
-	validateOIDC(cfg.ClientAuthenticationMethods.OIDC)
+	validateSubjectTokens(cfg.SubjectTokens)
 
 	if cfg.EnableAccessEvaluation {
 		validateAccessEvaluationAPI(cfg.AccessEvaluationAPI)
@@ -271,6 +277,20 @@ func validateSpiffe(spiffe *Spiffe) {
 	}
 }
 
+func validateSubjectTokens(subjectToken *SubjectTokens) {
+	if subjectToken.OIDC == nil && subjectToken.SelfSigned == nil {
+		panic("At least one subject token configuration must be provided")
+	}
+
+	if subjectToken.OIDC != nil {
+		validateOIDC(subjectToken.OIDC)
+	}
+
+	if subjectToken.SelfSigned != nil {
+		validateSelfSigned(subjectToken.SelfSigned)
+	}
+}
+
 func validateOIDC(oidc *OIDC) {
 	if oidc == nil {
 		panic("OIDC configuration must be provided")
@@ -286,6 +306,18 @@ func validateOIDC(oidc *OIDC) {
 
 	if oidc.SubjectField == "" {
 		panic("OIDC subject field must be populated")
+	}
+}
+
+func validateSelfSigned(selfSigned *SelfSigned) {
+	if selfSigned == nil {
+		panic("SelfSigned configuration must be provided")
+	}
+
+	if selfSigned.Validate {
+		if selfSigned.JwksEndpoint == "" {
+			panic("JWKS Endpoint must be provided if Validate is true")
+		}
 	}
 }
 

@@ -57,7 +57,7 @@ func (o *OIDCTokenHandler) ExtractSubject(claims interface{}) (subjectidentifier
 
 	subjectValue, ok := mapClaims[o.subjectField].(string)
 	if !ok {
-		return nil, txntokenerrors.ErrConfiguredSubjectFieldNotFound
+		return nil, txntokenerrors.ErrSubjectFieldNotFound
 	}
 
 	return subjectidentifier.NewIdentifier(o.subjectField, subjectValue)
