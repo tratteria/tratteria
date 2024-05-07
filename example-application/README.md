@@ -1,6 +1,71 @@
 # Alpha Stocks
 
-Alpha Stocks is a sample application that implements transaction tokens(TraTs) using Tratteria. It runs on a Kubernetes cluster and can serve as a reference for integrating Tratteria into other projects. Details on deploying Tratteria can be found in the `deployment\kubernetes\tratteria` directory.
+Alpha Stocks is a sample application that implements transaction tokens(TraTs) using Tratteria. It runs on a Kubernetes cluster and can serve as a reference for integrating Tratteria into other projects. The application has the following architecture:
+
+~~~
+                                    ╔════════════════════════╗                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║ Tratteria (Transaction ║                                                              
+                                    ║    Tokens Service)     ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ║                        ║                                                              
+                                    ╚════════════════════════╝                                                              
+                                                 ▲                                                                          
+                      ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                                                 │                                         ┌────────────────────────┐      │
+                      │                          │                                         │                        │       
+                                                 │                                         │                        │      │
+                      │                          │                                         │                        │       
+                                                 │                                         │                        │      │
+                      │                          │                          ┌─────────────▶│     Stocks Service     │       
+                                                 │                          │              │                        │      │
+                      │                          │                          │              │                        │       
+                                                 │                          │              │                        │      │
+┌────────────┐        │                          │                          │              │                        │       
+│            │                      ┌────────────────────────┐              │              └────────────────────────┘      │
+│            │        │             │                        │              │                           ▲                   
+│            │                      │                        │              │                           │                  │
+│            │        │             │                        │              │                           │                   
+│            │                      │                        │              │                           │                  │
+│    User    │────────┼────────────▶│      API Gateway       │──────────────┤                           │                   
+│            │                      │                        │              │                           │                  │
+│            │        │             │                        │              │                           │                   
+│            │                      │                        │              │                           │                  │
+│            │        │             │                        │              │                           │                   
+│            │                      └────────────────────────┘              │                           │                  │
+└────────────┘        │                          │                          │              ┌────────────────────────┐       
+       │                                         │                          │              │                        │      │
+       │              │                          │                          │              │                        │       
+       │                                         │                          │              │                        │      │
+       │              │                          │                          │              │                        │       
+       │                                         │                          └─────────────▶│     Order Service      │      │
+       │              │                          │                                         │                        │       
+       │                                         │                                         │                        │      │
+       │              │                          │                                         │                        │       
+       │                                         │                                         │                        │      │
+       │              │                          │                                         └────────────────────────┘       
+       │                                         │                                                                         │
+       │              │                          │                                                                
+       │               ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+       │                                         ▼                                                                          
+       │                            ┌────────────────────────┐                                                              
+       │                            │                        │                                                              
+       │                            │                        │                                                              
+       │                            │                        │                                                              
+       │                            │   Dex OpenID Connect   │                                                              
+       └───────────────────────────▶│   Identity Provider    │                                                              
+                                    │                        │                                                              
+                                    │                        │                                                              
+                                    │                        │                                                              
+                                    │                        │                                                              
+                                    └────────────────────────┘                                                              
+~~~
+
+As shown in the diagram above, the API Gateway integrates with the Tratteria service to obtain TraTs that it can use to assure identity and context in its calls downstream, to the Order and Stocks services. The Order Service also calls the Stocks Service and passes the TraT it received from the API Gateway to the Stocks Service. Because TraTs can be passed between downstream services, they can assure identity and call context in arbitrarily deep call chains. The short-lived nature of TraTs makes them relatively immune to replay attacks (unless the replay happens really quickly, and the replay is exactly the same as the information in the TraT).
 
 ## How to Run
 
