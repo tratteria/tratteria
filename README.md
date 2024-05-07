@@ -8,7 +8,7 @@ Tratteria is an open source Transaction Tokens (TraTs) Service. The Transaction 
 - [Learn about Tratteria](#learn-about-tratteria)
 - [Integrate Tratteria](#integrate-tratteria)
 - [Example Application](https://github.com/SGNL-ai/Tratteria/tree/main/example-application)
-- [Transaction Tokens Draft Specification](https://github.com/SGNL-ai/Tratteria/tree/main/example-application)
+- [Transaction Tokens Draft Specification](https://datatracker.ietf.org/doc/draft-ietf-oauth-transaction-tokens/)
 - [Contribute to Tratteria](#contribute-to-tratteria)
 
 ## Get Tratteria
