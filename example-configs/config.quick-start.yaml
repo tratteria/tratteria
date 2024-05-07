@@ -1,0 +1,15 @@
+# Quick-Start Configuration File
+#
+# WARNING: This configuration is designed only for initial testing and evaluation.
+# It omits important security and performance settings and SHOULD NOT be used in production environments.
+#
+# Please use config.example.yml as a reference for setting up a production-ready configuration.
+
+issuer: https://example.org/tts
+audience: https://example.org/
+token:
+  lifeTime: "15s"
+clientAuthenticationMethods:
+  selfSigned:
+    validation: false
+enableAccessEvaluation: false
