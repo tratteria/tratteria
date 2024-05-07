@@ -1,0 +1,42 @@
+# Example Configuration File
+#
+# This file includes detailed configuration options with comments explaining each setting.
+# Customize this configuration according to your production environment needs.
+
+issuer: https://example.org/tts
+audience: https://example.org/
+token:
+  lifeTime: "15s"
+keys:
+  privateKey: ${PRIVATE_KEY}
+  jwks: ${JWKS}
+  keyID: ${KEY_ID}
+spiffe:
+  endpoint_socket: unix:///run/spire/sockets/agent.sock
+  serviceID: spiffe://example.org/tts
+  authorizedServiceIDs:
+    - spiffe://example.org/gateway
+clientAuthenticationMethods:
+  OIDC:
+    clientId: example-client
+    providerURL: http://example.org/oidcprovider
+    subjectField: email
+  selfSigned:
+    validation: true
+    jwksEndpoint: http://example.org/oidcprovider/.well-known/jwks.json
+enableAccessEvaluation: true
+accessEvaluationAPI:
+  endpoint: https://example.authzen.com/access/v1/evaluation
+  authentication:
+    method: Bearer
+    token:
+      value: ${AUTHORIZATION_API_BEARER_TOKEN}
+  requestMapping:
+    subject:
+      id: "$.subject_token.email"
+    action:
+      name: "$.scope"
+    resource:
+      stockID: "$.request_details.stockID"
+      transactionID: "$.request_details.transactionID"
+    context: "$.request_context"
