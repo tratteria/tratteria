@@ -61,7 +61,8 @@ Tratteria is an open source Transaction Tokens (TraTs) Service. The Transaction 
                                     │                        │                                                              
                                     │                        │                                                              
                                     │                        │                                                              
-                                    └────────────────────────┘                                                              ~~~
+                                    └────────────────────────┘                                                              
+~~~
 
 As shown in the diagram above, the API Gateway in the sample app integrates with the Tratteria service to obtain TraTs that it can use to assure identity and context in its calls downstream, to the Order and Stocks services. The Order Service also calls the Stocks Service and passes the TraT it received from the API Gateway to the Stocks Service. Because TraTs can be passed between downstream services, they can assure identity and call context in arbitrarily deep call chains. The short-lived nature of TraTs makes them relatively immune to replay attacks (unless the replay happens really quickly, and the replay is exactly the same as the information in the TraT).
 
@@ -88,6 +89,9 @@ clientAuthenticationMethods:
     clientId: example-client
     providerURL: http://example.org/oidcprovider
     subjectField: email
+  selfSigned:
+    validate: true
+    jwksEndpoint: https://example.org/.well-known/jwks.json
 enableAccessEvaluation: true
 accessEvaluationAPI:
   endpoint: https://example.authzen.com/access/v1/evaluation

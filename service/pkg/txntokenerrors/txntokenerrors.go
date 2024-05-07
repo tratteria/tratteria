@@ -10,6 +10,6 @@ var ErrInvalidSubjectTokenClaims = errors.New("invalid subject token claims")
 
 var ErrUnsupportedTokenType = errors.New("token type not supported")
 
-var ErrConfiguredSubjectFieldNotFound = errors.New("configured subject field not found in the subject token")
+var ErrSubjectFieldNotFound = errors.New("subject field not found in the subject token")
 
 var ErrAccessDenied = errors.New("access denied for the request")

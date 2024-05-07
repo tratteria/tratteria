@@ -17,14 +17,19 @@ type TokenHandler interface {
 }
 
 type TokenHandlers struct {
-	oIDCTokenHandler TokenHandler
+	oIDCTokenHandler       TokenHandler
+	selfSignedTokenHandler TokenHandler
 }
 
-func GetTokenHandlers(clientAuthenticationMethods *config.ClientAuthenticationMethods, logger *zap.Logger) *TokenHandlers {
+func GetTokenHandlers(subjectTokens *config.SubjectTokens, logger *zap.Logger) *TokenHandlers {
 	handlers := &TokenHandlers{}
 
-	if clientAuthenticationMethods.OIDC != nil {
-		handlers.oIDCTokenHandler = NewOIDCTokenHandler(clientAuthenticationMethods.OIDC, logger)
+	if subjectTokens.OIDC != nil {
+		handlers.oIDCTokenHandler = NewOIDCTokenHandler(subjectTokens.OIDC, logger)
+	}
+
+	if subjectTokens.SelfSigned != nil {
+		handlers.selfSignedTokenHandler = NewSelfSignedTokenHandler(subjectTokens.SelfSigned, logger)
 	}
 
 	return handlers
@@ -37,7 +42,14 @@ func (t *TokenHandlers) GetHandler(tokenType common.TokenType) (TokenHandler, er
 			return t.oIDCTokenHandler, nil
 		}
 
-		return nil, errors.New("client authentication configuration not provided for OIDC")
+		return nil, errors.New("configuration not provided for OIDC subject token")
+	case common.SELF_SIGNED_TOKEN_TYPE:
+		if t.selfSignedTokenHandler != nil {
+			return t.selfSignedTokenHandler, nil
+		}
+
+		return nil, errors.New("configuration not provided for self-signed subject token")
+
 	default:
 		return nil, fmt.Errorf("unsupported token type: %s", tokenType)
 	}

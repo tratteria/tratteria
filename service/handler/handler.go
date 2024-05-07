@@ -65,9 +65,9 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	subjectTokenType := common.Str2TokenType[r.FormValue("subject_token_type")]
-	if subjectTokenType != common.OIDC_ID_TOKEN_TYPE {
+	if subjectTokenType != common.OIDC_ID_TOKEN_TYPE && subjectTokenType != common.SELF_SIGNED_TOKEN_TYPE {
 		h.Logger.Error("Invalid or unsupported subject token type.", zap.String("subject-token-type", string(subjectTokenType)))
-		http.Error(w, "Invalid or unsupported subject token type. Only OIDC ID tokens are supported.", http.StatusUnprocessableEntity)
+		http.Error(w, "Invalid or unsupported subject token type. Only OIDC ID and self-signed tokens are supported.", http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -155,7 +155,7 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		h.Logger.Error("Error generating txn token.", zap.Error(err))
 
 		switch err {
-		case txntokenerrors.ErrParsingSubjectToken, txntokenerrors.ErrInvalidSubjectTokenClaims, txntokenerrors.ErrUnsupportedTokenType, txntokenerrors.ErrConfiguredSubjectFieldNotFound:
+		case txntokenerrors.ErrParsingSubjectToken, txntokenerrors.ErrInvalidSubjectTokenClaims, txntokenerrors.ErrUnsupportedTokenType, txntokenerrors.ErrSubjectFieldNotFound:
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		case txntokenerrors.ErrAccessDenied:
 			http.Error(w, err.Error(), http.StatusForbidden)
