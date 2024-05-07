@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -41,7 +42,15 @@ func main() {
 		}
 	}()
 
-	appConfig := config.GetAppConfig()
+	if len(os.Args) < 2 {
+		logger.Error("No configuration file provided. Please specify the configuration path as an argument when running the service.",
+			zap.String("usage", "tratteria <config-path>"))
+		os.Exit(1)
+	}
+
+	configPath := os.Args[1]
+
+	appConfig := config.GetAppConfig(configPath)
 
 	err = keys.Initialize(appConfig)
 	if err != nil {

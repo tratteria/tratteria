@@ -12,8 +12,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const CONFIG_FILE_PATH = "/app/config/config.yaml"
-
 type AppConfig struct {
 	Issuer                 string               `yaml:"issuer"`
 	Audience               string               `yaml:"audience"`
@@ -208,8 +206,8 @@ func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	return nil
 }
 
-func GetAppConfig() *AppConfig {
-	data, err := os.ReadFile(CONFIG_FILE_PATH)
+func GetAppConfig(configPath string) *AppConfig {
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		panic(fmt.Sprintf("failed to read config file: %v", err))
 	}
