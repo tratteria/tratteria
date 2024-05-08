@@ -20,7 +20,7 @@ type AppConfig struct {
 	Token                  Token                `yaml:"token"`
 	Keys                   *Keys                `yaml:"keys,omitempty"`
 	Spiffe                 *Spiffe              `yaml:"spiffe,omitempty"`
-	SubjectTokens          *SubjectTokens       `yaml:"clientAuthenticationMethods"`
+	SubjectTokens          *SubjectTokens       `yaml:"subjectTokens"`
 	EnableAccessEvaluation BoolFromString       `yaml:"enableAccessEvaluation"`
 	AccessEvaluationAPI    *AccessEvaluationAPI `yaml:"accessEvaluationAPI,omitempty"`
 }
