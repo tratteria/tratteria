@@ -19,4 +19,4 @@ WORKDIR /app
 
 COPY --from=builder /app/tratteria .
 
-CMD ["./tratteria"]
+ENTRYPOINT ["./tratteria"]
