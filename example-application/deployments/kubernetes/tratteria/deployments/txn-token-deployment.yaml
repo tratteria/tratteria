@@ -43,7 +43,6 @@ spec:
           image: tratteria
           name: tratteria
           imagePullPolicy: Never
-          command: ["./tratteria"]
           args: ["/app/config/config.yaml"]
           ports:
             - containerPort: 9090
