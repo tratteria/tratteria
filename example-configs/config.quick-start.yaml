@@ -11,7 +11,7 @@ issuer: https://example.org/tts
 audience: https://example.org/
 token:
   lifeTime: "15s"
-clientAuthenticationMethods:
+subjectTokens:
   selfSigned:
     validation: false
 enableAccessEvaluation: false
