@@ -49,6 +49,7 @@ type TokenRequest struct {
 }
 
 type TokenResponse struct {
+	TokenType       string           `json:"token_type"`
 	IssuedTokenType common.TokenType `json:"issued_token_type"`
 	AccessToken     string           `json:"access_token"`
 }
@@ -133,6 +134,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 	}
 
 	tokenResponse := &TokenResponse{
+		TokenType:       "N_A",
 		IssuedTokenType: common.TXN_TOKEN_TYPE,
 		AccessToken:     tokenString,
 	}
