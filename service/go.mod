@@ -1,4 +1,4 @@
-module github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service
+module github.com/tratteria/tratteria
 
 go 1.22.0
 

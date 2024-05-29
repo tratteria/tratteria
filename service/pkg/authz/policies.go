@@ -3,8 +3,8 @@ package authz
 import (
 	"net/http"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"github.com/tratteria/tratteria/pkg/config"
 )
 
 func GetPublicEndpoints() []string {

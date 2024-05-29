@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/tratteria/tratteria/pkg/config"
 )
 
 var (

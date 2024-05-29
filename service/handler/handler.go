@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
+	"github.com/tratteria/tratteria/pkg/common"
+	"github.com/tratteria/tratteria/pkg/config"
+	"github.com/tratteria/tratteria/pkg/service"
+	"github.com/tratteria/tratteria/pkg/txntokenerrors"
 
 	"go.uber.org/zap"
 )

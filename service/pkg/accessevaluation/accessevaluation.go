@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/oliveagle/jsonpath"
+	"github.com/tratteria/tratteria/pkg/config"
 )
 
 type AccessEvaluatorService interface {

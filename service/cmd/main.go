@@ -10,14 +10,14 @@ import (
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/handler"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middleware"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/spire"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
+	"github.com/tratteria/tratteria/handler"
+	"github.com/tratteria/tratteria/pkg/accessevaluation"
+	"github.com/tratteria/tratteria/pkg/config"
+	"github.com/tratteria/tratteria/pkg/keys"
+	"github.com/tratteria/tratteria/pkg/middleware"
+	"github.com/tratteria/tratteria/pkg/service"
+	"github.com/tratteria/tratteria/pkg/spire"
+	"github.com/tratteria/tratteria/pkg/subjecttokenhandler"
 )
 
 type App struct {

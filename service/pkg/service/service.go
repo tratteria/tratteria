@@ -4,16 +4,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
+	"github.com/tratteria/tratteria/pkg/accessevaluation"
+	"github.com/tratteria/tratteria/pkg/common"
+	"github.com/tratteria/tratteria/pkg/config"
+	"github.com/tratteria/tratteria/pkg/keys"
+	"github.com/tratteria/tratteria/pkg/subjecttokenhandler"
+	"github.com/tratteria/tratteria/pkg/txntokenerrors"
 	"go.uber.org/zap"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
+	"github.com/tratteria/tratteria/pkg/config"
 	"go.uber.org/zap"
 )
 

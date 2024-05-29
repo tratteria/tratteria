@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjectidentifier"
+	"github.com/tratteria/tratteria/pkg/common"
+	"github.com/tratteria/tratteria/pkg/config"
+	"github.com/tratteria/tratteria/pkg/subjectidentifier"
 	"go.uber.org/zap"
 )
 

@@ -10,8 +10,8 @@ import (
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/authz"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
+	"github.com/tratteria/tratteria/pkg/authz"
+	"github.com/tratteria/tratteria/pkg/config"
 )
 
 func spiffeMiddleware(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) func(http.Handler) http.Handler {
