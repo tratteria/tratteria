@@ -43,7 +43,7 @@ type TokenRequest struct {
 	RequestedTokenType common.TokenType
 	SubjectToken       string
 	SubjectTokenType   common.TokenType
-	Scope              string
+	Purpose            string
 	RequestDetails     map[string]any
 	RequestContext     map[string]any
 }
@@ -82,7 +82,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 
 	s.Logger.Info("Successfully verified subject token.", zap.Any("subject", subject))
 
-	accessEvaluation, err := s.AccessEvaluator.Evaluate(claims, txnTokenRequest.Scope, txnTokenRequest.RequestDetails, txnTokenRequest.RequestContext)
+	accessEvaluation, err := s.AccessEvaluator.Evaluate(claims, txnTokenRequest.Purpose, txnTokenRequest.RequestDetails, txnTokenRequest.RequestContext)
 	if err != nil {
 		s.Logger.Error("Error evaluating access.", zap.Error(err))
 
@@ -92,7 +92,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 	if !accessEvaluation {
 		s.Logger.Error("Access Denied.",
 			zap.Any("subject", subject),
-			zap.Any("scope", txnTokenRequest.Scope),
+			zap.Any("purpose", txnTokenRequest.Purpose),
 			zap.Any("request-details", txnTokenRequest.RequestDetails),
 			zap.Any("request-context", txnTokenRequest.RequestContext),
 		)
@@ -100,7 +100,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 		return &TokenResponse{}, txntokenerrors.ErrAccessDenied
 	}
 
-	s.Logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("scope", txnTokenRequest.Scope))
+	s.Logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("purpose", txnTokenRequest.Purpose))
 
 	txnID, err := uuid.NewRandom()
 	if err != nil {
@@ -116,7 +116,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *TokenRe
 		"exp":  time.Now().Add(s.Config.Token.LifeTime).Unix(),
 		"txn":  txnID,
 		"sub":  subject,
-		"purp": txnTokenRequest.Scope,
+		"purp": txnTokenRequest.Purpose,
 		"azd":  txnTokenRequest.RequestDetails,
 		"rctx": txnTokenRequest.RequestContext,
 	})

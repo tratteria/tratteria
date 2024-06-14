@@ -51,13 +51,13 @@ accessEvaluationAPI:
       value: ${AUTHORIZATION_API_BEARER_TOKEN}  # Token value for Bearer authentication.
 
 #requestMapping: Define how to construct the request body for the Authorization API using JSON path expressions. This mapping pulls specific values from
-#the transaction-token request (subject_token, scope, request_details, and request_context) using JSON path expression and assigns them to respective
+#the transaction-token request (subject_token, purpose, request_details, and request_context) using JSON path expression and assigns them to respective
 #fields below to construct the JSON request body for the Authorization API.
   requestMapping:
     subject:
       id: "$.subject_token.email"
     action:
-      name: "$.scope"
+      name: "$.purpose"
     resource:
       stockID: "$.request_details.stockID"
       transactionID: "$.request_details.transactionID"

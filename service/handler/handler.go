@@ -87,10 +87,10 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	scope := r.FormValue("scope")
-	if scope == "" {
-		h.Logger.Error("Scope not provided.")
-		http.Error(w, "Scope token not provided.", http.StatusBadRequest)
+	purpose := r.FormValue("purpose")
+	if purpose == "" {
+		h.Logger.Error("Purpose not provided.")
+		http.Error(w, "Purpose token not provided.", http.StatusBadRequest)
 
 		return
 	}
@@ -145,7 +145,7 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		RequestedTokenType: requestedTokenType,
 		SubjectToken:       subjectToken,
 		SubjectTokenType:   subjectTokenType,
-		Scope:              scope,
+		Purpose:            purpose,
 		RequestDetails:     requestDetails,
 		RequestContext:     requestContext,
 	}

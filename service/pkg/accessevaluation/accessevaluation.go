@@ -13,7 +13,7 @@ import (
 )
 
 type AccessEvaluatorService interface {
-	Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error)
+	Evaluate(subject_token interface{}, Purpose string, RequestDetails, RequestContext map[string]any) (bool, error)
 }
 
 type AccessEvaluator struct {
@@ -84,10 +84,10 @@ func resolveJSONPaths(inputData map[string]interface{}, mapping any) (any, error
 	}
 }
 
-func (a *AccessEvaluator) Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error) {
+func (a *AccessEvaluator) Evaluate(subject_token interface{}, Purpose string, RequestDetails, RequestContext map[string]any) (bool, error) {
 	inputData := map[string]interface{}{
 		"subject_token":   subject_token,
-		"scope":           Scope,
+		"purpose":         Purpose,
 		"request_details": RequestDetails,
 		"request_context": RequestContext,
 	}
@@ -140,6 +140,6 @@ func (a *AccessEvaluator) Evaluate(subject_token interface{}, Scope string, Requ
 
 type NoOpAccessEvaluator struct{}
 
-func (n *NoOpAccessEvaluator) Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error) {
+func (n *NoOpAccessEvaluator) Evaluate(subject_token interface{}, Purpose string, RequestDetails, RequestContext map[string]any) (bool, error) {
 	return true, nil
 }
