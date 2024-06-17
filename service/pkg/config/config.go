@@ -21,6 +21,7 @@ type AppConfig struct {
 	SubjectTokens          *SubjectTokens       `yaml:"subjectTokens"`
 	EnableAccessEvaluation BoolFromString       `yaml:"enableAccessEvaluation"`
 	AccessEvaluationAPI    *AccessEvaluationAPI `yaml:"accessEvaluationAPI,omitempty"`
+	TconfigdUrl            string               `yaml:"tconfigdUrl"`
 }
 
 type Token struct {

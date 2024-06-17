@@ -13,6 +13,7 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/handler"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
@@ -26,6 +27,7 @@ type App struct {
 	SpireJwtSource       *workloadapi.JWTSource
 	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
 	HttpClient           *http.Client
+	GenerationRules      *generationrules.GenerationRules
 	AccessEvaluator      accessevaluation.AccessEvaluatorService
 	Logger               *zap.Logger
 }
@@ -79,12 +81,18 @@ func main() {
 
 	subjectTokenHandlers := subjecttokenhandler.GetTokenHandlers(appConfig.SubjectTokens, logger)
 
+	generationRules, err := generationrules.NewGenerationRules(appConfig.TconfigdUrl)
+	if err != nil {
+		logger.Fatal("Unable to get TraTs generation rules.", zap.Error(err))
+	}
+
 	app := &App{
 		Router:               mux.NewRouter(),
 		Config:               appConfig,
 		SpireJwtSource:       spireJwtSource,
 		SubjectTokenHandlers: subjectTokenHandlers,
 		HttpClient:           httpClient,
+		GenerationRules:      generationRules,
 		AccessEvaluator:      accessEvaluator,
 		Logger:               logger,
 	}
@@ -93,7 +101,7 @@ func main() {
 
 	app.Router.Use(middleware)
 
-	appService := service.NewService(app.Config, app.SpireJwtSource, app.SubjectTokenHandlers, app.AccessEvaluator, app.Logger)
+	appService := service.NewService(app.Config, app.SpireJwtSource, app.SubjectTokenHandlers, app.GenerationRules, app.AccessEvaluator, app.Logger)
 	appHandler := handler.NewHandlers(appService, app.Config, app.Logger)
 
 	app.initializeRoutes(appHandler)
