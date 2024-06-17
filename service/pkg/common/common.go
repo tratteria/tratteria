@@ -45,13 +45,13 @@ func (r *RequestDetails) Validate() error {
 	}
 
 	if r.Endpoint == "" {
-		return errors.New("path cannot be empty")
+		return errors.New("endpoint cannot be empty")
 	}
 
 	if parsedPath, err := url.Parse(r.Endpoint); err != nil {
-		return fmt.Errorf("invalid path: %v", err)
+		return fmt.Errorf("invalid endpoint: %v", err)
 	} else if parsedPath.Path != r.Endpoint {
-		return errors.New("path must not include domain or scheme")
+		return errors.New("endpoint must not include domain or scheme")
 	}
 
 	return nil
