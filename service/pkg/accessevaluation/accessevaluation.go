@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/oliveagle/jsonpath"
 )
 
 type AccessEvaluatorService interface {
-	Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error)
+	Evaluate(tokenRequest *common.TokenRequest, subject_token interface{}, scope string, adz map[string]any) (bool, error)
 }
 
 type AccessEvaluator struct {
@@ -84,12 +85,15 @@ func resolveJSONPaths(inputData map[string]interface{}, mapping any) (any, error
 	}
 }
 
-func (a *AccessEvaluator) Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error) {
+func (a *AccessEvaluator) Evaluate(tokenRequest *common.TokenRequest, subject_token interface{}, scope string, adz map[string]any) (bool, error) {
 	inputData := map[string]interface{}{
-		"subject_token":   subject_token,
-		"scope":           Scope,
-		"request_details": RequestDetails,
-		"request_context": RequestContext,
+		"subject_token":        subject_token,
+		"scope":                scope,
+		"adz":                  adz,
+		"subject_token_type":   tokenRequest.SubjectTokenType,
+		"requested_token_type": tokenRequest.RequestedTokenType,
+		"request_details":      tokenRequest.RequestDetails,
+		"request_context":      tokenRequest.RequestContext,
 	}
 
 	requestData, err := resolveJSONPaths(inputData, a.requestMapping)
@@ -140,6 +144,6 @@ func (a *AccessEvaluator) Evaluate(subject_token interface{}, Scope string, Requ
 
 type NoOpAccessEvaluator struct{}
 
-func (n *NoOpAccessEvaluator) Evaluate(subject_token interface{}, Scope string, RequestDetails, RequestContext map[string]any) (bool, error) {
+func (n *NoOpAccessEvaluator) Evaluate(tokenRequest *common.TokenRequest, subject_token interface{}, scope string, adz map[string]any) (bool, error) {
 	return true, nil
 }

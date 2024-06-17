@@ -87,14 +87,6 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	scope := r.FormValue("scope")
-	if scope == "" {
-		h.Logger.Error("Scope not provided.")
-		http.Error(w, "Scope token not provided.", http.StatusBadRequest)
-
-		return
-	}
-
 	requestedTokenType := common.Str2TokenType[r.FormValue("requested_token_type")]
 	if requestedTokenType != common.TXN_TOKEN_TYPE {
 		h.Logger.Error("Invalid requested token type.", zap.String("requested-token-type", string(requestedTokenType)))
@@ -113,11 +105,18 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	requestDetails := make(map[string]any)
+	var requestDetails common.RequestDetails
 
 	if err := json.Unmarshal(requestDetailsJSON, &requestDetails); err != nil {
 		h.Logger.Error("Failed to unmarshal request details from the request", zap.Error(err))
 		http.Error(w, "Invalid request details format", http.StatusBadRequest)
+
+		return
+	}
+
+	if err := requestDetails.Validate(); err != nil {
+		h.Logger.Error("Invalid request details:", zap.Error(err))
+		http.Error(w, "Invalid request details: "+err.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -141,11 +140,10 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	txnTokenRequest := service.TokenRequest{
+	txnTokenRequest := common.TokenRequest{
 		RequestedTokenType: requestedTokenType,
 		SubjectToken:       subjectToken,
 		SubjectTokenType:   subjectTokenType,
-		Scope:              scope,
 		RequestDetails:     requestDetails,
 		RequestContext:     requestContext,
 	}
