@@ -7,9 +7,10 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratgenerator"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -19,22 +20,24 @@ import (
 )
 
 type Service struct {
-	Config               *config.AppConfig
-	SpireJwtSource       *workloadapi.JWTSource
-	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
-	GenerationRules      *generationrules.GenerationRules
-	AccessEvaluator      accessevaluation.AccessEvaluatorService
-	Logger               *zap.Logger
+	config                *config.AppConfig
+	spireJwtSource        *workloadapi.JWTSource
+	subjectTokenHandlers  *subjecttokenhandler.TokenHandlers
+	generationRuleManager v1alpha1.GenerationRulesManager
+	tratGenerator         *tratgenerator.TraTGenerator
+	accessEvaluator       accessevaluation.AccessEvaluatorService
+	logger                *zap.Logger
 }
 
-func NewService(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, subjectTokenHandlers *subjecttokenhandler.TokenHandlers, generationRules *generationrules.GenerationRules, accessEvaluator accessevaluation.AccessEvaluatorService, logger *zap.Logger) *Service {
+func NewService(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, subjectTokenHandlers *subjecttokenhandler.TokenHandlers, generationRuleManager v1alpha1.GenerationRulesManager, tratGenerator *tratgenerator.TraTGenerator, accessEvaluator accessevaluation.AccessEvaluatorService, logger *zap.Logger) *Service {
 	return &Service{
-		Config:               config,
-		SpireJwtSource:       spireJwtSource,
-		SubjectTokenHandlers: subjectTokenHandlers,
-		GenerationRules:      generationRules,
-		AccessEvaluator:      accessEvaluator,
-		Logger:               logger,
+		config:                config,
+		spireJwtSource:        spireJwtSource,
+		subjectTokenHandlers:  subjectTokenHandlers,
+		generationRuleManager: generationRuleManager,
+		tratGenerator:         tratGenerator,
+		accessEvaluator:       accessEvaluator,
+		logger:                logger,
 	}
 }
 
@@ -53,45 +56,51 @@ func (s *Service) GetJwks() jwk.Set {
 }
 
 func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.TokenRequest) (*TokenResponse, error) {
-	subjectTokenHandler, err := s.SubjectTokenHandlers.GetHandler(txnTokenRequest.SubjectTokenType)
+	subjectTokenHandler, err := s.subjectTokenHandlers.GetHandler(txnTokenRequest.SubjectTokenType)
 	if err != nil {
-		s.Logger.Error("Failed to get subject token handler.", zap.String("subject-token-type", string(txnTokenRequest.SubjectTokenType)), zap.Error(err))
+		s.logger.Error("Failed to get subject token handler.", zap.String("subject-token-type", string(txnTokenRequest.SubjectTokenType)), zap.Error(err))
 
 		return &TokenResponse{}, err
 	}
 
 	subjectTokenClaims, err := subjectTokenHandler.VerifyAndParse(ctx, txnTokenRequest.SubjectToken)
 	if err != nil {
-		s.Logger.Error("Failed to verify and parse subject token.", zap.Error(err))
+		s.logger.Error("Failed to verify and parse subject token.", zap.Error(err))
 
 		return &TokenResponse{}, err
 	}
 
 	subject, err := subjectTokenHandler.ExtractSubject(subjectTokenClaims)
 	if err != nil {
-		s.Logger.Error("Failed to extract subject.", zap.Error(err))
+		s.logger.Error("Failed to extract subject.", zap.Error(err))
 
 		return &TokenResponse{}, err
 	}
 
-	s.Logger.Info("Successfully verified subject token.", zap.Any("subject", subject))
+	s.logger.Info("Successfully verified subject token.", zap.Any("subject", subject))
 
-	scope, adz, err := s.GenerationRules.Generate(txnTokenRequest.RequestDetails)
+	scope, adz, err := s.tratGenerator.GenerateTraT(
+		txnTokenRequest.RequestDetails.Path,
+		txnTokenRequest.RequestDetails.Method,
+		txnTokenRequest.RequestDetails.QueryParameters,
+		txnTokenRequest.RequestDetails.Headers,
+		txnTokenRequest.RequestDetails.Body,
+	)
 	if err != nil {
-		s.Logger.Error("Failed to generate scope and authorization details for a request.", zap.Error(err))
+		s.logger.Error("Failed to generate scope and authorization details for a request.", zap.Error(err))
 
 		return &TokenResponse{}, err
 	}
 
-	accessEvaluation, err := s.AccessEvaluator.Evaluate(txnTokenRequest, subjectTokenClaims, scope, adz)
+	accessEvaluation, err := s.accessEvaluator.Evaluate(txnTokenRequest, subjectTokenClaims, scope, adz)
 	if err != nil {
-		s.Logger.Error("Error evaluating access.", zap.Error(err))
+		s.logger.Error("Error evaluating access.", zap.Error(err))
 
 		return &TokenResponse{}, err
 	}
 
 	if !accessEvaluation {
-		s.Logger.Error("Access Denied.",
+		s.logger.Error("Access Denied.",
 			zap.Any("subject", subject),
 			zap.Any("scope", scope),
 		)
@@ -99,20 +108,20 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 		return &TokenResponse{}, txntokenerrors.ErrAccessDenied
 	}
 
-	s.Logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("scope", scope))
+	s.logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("scope", scope))
 
 	txnID, err := uuid.NewRandom()
 	if err != nil {
-		s.Logger.Error("Error generating transaction id.")
+		s.logger.Error("Error generating transaction id.")
 
 		return &TokenResponse{}, err
 	}
 
 	newToken := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"iss":  s.Config.Issuer,
+		"iss":  s.config.Issuer,
 		"iat":  time.Now().Unix(),
-		"aud":  s.Config.Audience,
-		"exp":  time.Now().Add(s.Config.Token.LifeTime).Unix(),
+		"aud":  s.config.Audience,
+		"exp":  time.Now().Add(s.config.Token.LifeTime).Unix(),
 		"txn":  txnID,
 		"sub":  subject,
 		"purp": scope,
@@ -127,7 +136,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 
 	tokenString, err := newToken.SignedString(privateKey)
 	if err != nil {
-		s.Logger.Error("Failed to sign txn token.", zap.Error(err))
+		s.logger.Error("Failed to sign txn token.", zap.Error(err))
 
 		return &TokenResponse{}, err
 	}
@@ -139,4 +148,12 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 	}
 
 	return tokenResponse, nil
+}
+
+func (s *Service) AddGenerationRule(pushedGenerationRule v1alpha1.GenerationRule) {
+	s.generationRuleManager.AddRule(pushedGenerationRule)
+}
+
+func (s *Service) GetGenerationRules() map[string]map[string]v1alpha1.GenerationRule {
+	return s.generationRuleManager.GetRules()
 }

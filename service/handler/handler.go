@@ -3,10 +3,12 @@ package handler
 import (
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
 
@@ -173,4 +175,47 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.Logger.Info("Txn-Token request processed successfully.")
+}
+
+func (h *Handlers) ConfigWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.Logger.Error("Failed to read pushed generation rule request body", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+	defer r.Body.Close()
+
+	var generationRule v1alpha1.GenerationRule
+
+	if err := json.Unmarshal(body, &generationRule); err != nil {
+		h.Logger.Error("Failed to unmarshal pushed generation rule", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	h.Logger.Info("Received pushed generation rule",
+		zap.String("endpoint", generationRule.Endpoint),
+		zap.String("method", generationRule.Method))
+
+	h.Service.AddGenerationRule(generationRule)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handlers) GetGenerationRulesHandler(w http.ResponseWriter, r *http.Request) {
+	generationRules := h.Service.GetGenerationRules()
+
+	response, err := json.Marshal(generationRules)
+	if err != nil {
+		http.Error(w, "Failed to encode generation rules", http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }

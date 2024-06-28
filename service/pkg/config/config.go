@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"reflect"
 	"regexp"
@@ -21,7 +22,7 @@ type AppConfig struct {
 	SubjectTokens          *SubjectTokens       `yaml:"subjectTokens"`
 	EnableAccessEvaluation BoolFromString       `yaml:"enableAccessEvaluation"`
 	AccessEvaluationAPI    *AccessEvaluationAPI `yaml:"accessEvaluationAPI,omitempty"`
-	TconfigdUrl            string               `yaml:"tconfigdUrl"`
+	TconfigdUrl            URLFromString        `yaml:"tconfigdUrl"`
 }
 
 type Token struct {
@@ -202,6 +203,44 @@ func (b *BoolFromString) UnmarshalYAML(unmarshal func(interface{}) error) error 
 		}
 	default:
 		return fmt.Errorf("invalid type for a bool variable, expected bool or string, got %T", tmp)
+	}
+
+	return nil
+}
+
+type URLFromString url.URL
+
+func (u *URLFromString) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var tmp interface{}
+
+	if err := unmarshal(&tmp); err != nil {
+		return err
+	}
+
+	switch value := tmp.(type) {
+	case string:
+		if matched, envVarName := extractEnvVarName(value); matched {
+			envValue, err := getEnvVarValue(envVarName)
+			if err != nil {
+				return err
+			}
+
+			parsedURL, err := url.Parse(envValue)
+			if err != nil {
+				return fmt.Errorf("error parsing URL from environment variable: %v", err)
+			}
+
+			*u = URLFromString(*parsedURL)
+		} else {
+			parsedURL, err := url.Parse(value)
+			if err != nil {
+				return fmt.Errorf("error parsing URL from string: %v", err)
+			}
+
+			*u = URLFromString(*parsedURL)
+		}
+	default:
+		return fmt.Errorf("invalid type for a URL variable, expected string, got %T", tmp)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -32,11 +33,11 @@ const (
 )
 
 type RequestDetails struct {
-	Endpoint        string                 `json:"endpoint"`
-	Method          HttpMethod             `json:"method"`
-	Body            map[string]interface{} `json:"body"`
-	Headers         map[string]interface{} `json:"headers"`
-	QueryParameters map[string]interface{} `json:"queryParameters"`
+	Path            string          `json:"endpoint"`
+	Method          HttpMethod      `json:"method"`
+	QueryParameters json.RawMessage `json:"queryParameters"`
+	Headers         json.RawMessage `json:"headers"`
+	Body            json.RawMessage `json:"body"`
 }
 
 func (r *RequestDetails) Validate() error {
@@ -44,13 +45,13 @@ func (r *RequestDetails) Validate() error {
 		return errors.New("method cannot be empty")
 	}
 
-	if r.Endpoint == "" {
+	if r.Path == "" {
 		return errors.New("endpoint cannot be empty")
 	}
 
-	if parsedPath, err := url.Parse(r.Endpoint); err != nil {
+	if parsedPath, err := url.Parse(r.Path); err != nil {
 		return fmt.Errorf("invalid endpoint: %v", err)
-	} else if parsedPath.Path != r.Endpoint {
+	} else if parsedPath.Path != r.Path {
 		return errors.New("endpoint must not include domain or scheme")
 	}
 
