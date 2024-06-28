@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -13,12 +15,18 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/handler"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/configsync"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/spire"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratgenerator"
+)
+
+const (
+	ServerPort = 9090
 )
 
 type App struct {
@@ -27,7 +35,8 @@ type App struct {
 	SpireJwtSource       *workloadapi.JWTSource
 	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
 	HttpClient           *http.Client
-	GenerationRules      *generationrules.GenerationRules
+	GenerationRules      *v1alpha1.GenerationRules
+	TraTGenerator        *tratgenerator.TraTGenerator
 	AccessEvaluator      accessevaluation.AccessEvaluatorService
 	Logger               *zap.Logger
 }
@@ -60,6 +69,8 @@ func main() {
 	}
 
 	httpClient := &http.Client{}
+	generationRules := v1alpha1.NewGenerationRules()
+	tratGenerator := tratgenerator.NewTraTGenerator(generationRules)
 
 	var accessEvaluator accessevaluation.AccessEvaluatorService
 	if appConfig.EnableAccessEvaluation {
@@ -79,12 +90,16 @@ func main() {
 		defer spireJwtSource.Close()
 	}
 
-	subjectTokenHandlers := subjecttokenhandler.GetTokenHandlers(appConfig.SubjectTokens, logger)
-
-	generationRules, err := generationrules.NewGenerationRules(appConfig.TconfigdUrl)
+	configSyncClient, err := configsync.NewClient(ServerPort, url.URL(appConfig.TconfigdUrl), generationRules, httpClient, logger)
 	if err != nil {
-		logger.Fatal("Unable to get TraTs generation rules.", zap.Error(err))
+		logger.Fatal("Error creating configuration sync client for tconfigd", zap.Error(err))
 	}
+
+	if err := configSyncClient.Start(); err != nil {
+		logger.Fatal("Error establishing communication with tconfigd", zap.Error(err))
+	}
+
+	subjectTokenHandlers := subjecttokenhandler.GetTokenHandlers(appConfig.SubjectTokens, logger)
 
 	app := &App{
 		Router:               mux.NewRouter(),
@@ -93,6 +108,7 @@ func main() {
 		SubjectTokenHandlers: subjectTokenHandlers,
 		HttpClient:           httpClient,
 		GenerationRules:      generationRules,
+		TraTGenerator:        tratGenerator,
 		AccessEvaluator:      accessEvaluator,
 		Logger:               logger,
 	}
@@ -101,14 +117,14 @@ func main() {
 
 	app.Router.Use(middleware)
 
-	appService := service.NewService(app.Config, app.SpireJwtSource, app.SubjectTokenHandlers, app.GenerationRules, app.AccessEvaluator, app.Logger)
+	appService := service.NewService(app.Config, app.SpireJwtSource, app.SubjectTokenHandlers, app.GenerationRules, app.TraTGenerator, app.AccessEvaluator, app.Logger)
 	appHandler := handler.NewHandlers(appService, app.Config, app.Logger)
 
 	app.initializeRoutes(appHandler)
 
 	srv := &http.Server{
 		Handler:      app.Router,
-		Addr:         "0.0.0.0:9090",
+		Addr:         fmt.Sprintf("0.0.0.0:%d", ServerPort),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
@@ -120,4 +136,6 @@ func main() {
 func (a *App) initializeRoutes(handlers *handler.Handlers) {
 	a.Router.HandleFunc("/.well-known/jwks.json", handlers.GetJwksHandler).Methods("GET")
 	a.Router.HandleFunc("/token_endpoint", handlers.TokenEndpointHandler).Methods("POST")
+	a.Router.HandleFunc("/config-webhook", handlers.ConfigWebhookHandler).Methods("POST")
+	a.Router.HandleFunc("/generation-rules", handlers.GetGenerationRulesHandler).Methods("GET")
 }
