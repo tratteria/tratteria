@@ -66,7 +66,7 @@ func (m *GenerationRules) GetRules() map[string]map[string]GenerationRule {
 	return m.rules
 }
 
-// Read lock should be take by the function calling matchRule
+// Read lock should be take by the function calling matchRule.
 func (m *GenerationRules) matchRule(path string, method common.HttpMethod) (GenerationRule, map[string]string, error) {
 	methodRuleMap, ok := m.rules[string(method)]
 	if !ok {
@@ -76,11 +76,13 @@ func (m *GenerationRules) matchRule(path string, method common.HttpMethod) (Gene
 	for pattern, rule := range methodRuleMap {
 		regexPattern := convertToRegex(pattern)
 		re := regexp.MustCompile(regexPattern)
+
 		if re.MatchString(path) {
 			matches := re.FindStringSubmatch(path)
 			names := re.SubexpNames()
 
 			pathParameters := make(map[string]string)
+
 			for i, name := range names {
 				if i != 0 && name != "" {
 					pathParameters[name] = matches[i]
@@ -96,6 +98,7 @@ func (m *GenerationRules) matchRule(path string, method common.HttpMethod) (Gene
 
 func convertToRegex(template string) string {
 	r := strings.NewReplacer("{#", "(?P<", "}", ">[^/]+)")
+
 	return "^" + r.Replace(template) + "$"
 }
 
@@ -127,7 +130,7 @@ func (m *GenerationRules) ApplyRule(path string, method common.HttpMethod, input
 	return generationRule.Purp, azd, nil
 }
 
-// Read lock should be take by the function calling computeAzd
+// Read lock should be take by the function calling computeAzd.
 func (m *GenerationRules) computeAzd(azdMapping AzdMapping, input map[string]interface{}) (map[string]interface{}, error) {
 	azd := make(map[string]interface{})
 
@@ -171,6 +174,6 @@ func marshalToJson(data map[string]interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(bytes), nil
 }
