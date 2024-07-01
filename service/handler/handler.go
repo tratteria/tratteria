@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
@@ -17,14 +16,12 @@ import (
 
 type Handlers struct {
 	Service *service.Service
-	Config  *config.AppConfig
 	Logger  *zap.Logger
 }
 
-func NewHandlers(service *service.Service, config *config.AppConfig, logger *zap.Logger) *Handlers {
+func NewHandlers(service *service.Service, logger *zap.Logger) *Handlers {
 	return &Handlers{
 		Service: service,
-		Config:  config,
 		Logger:  logger,
 	}
 }
@@ -82,9 +79,10 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if r.FormValue("audience") != h.Config.Audience {
-		h.Logger.Error("The requested audience is not supported by this txn-token service.", zap.String("audience", r.FormValue("audience")))
-		http.Error(w, "The requested audience is not supported by this txn-token service.", http.StatusForbidden)
+	audience := r.FormValue("audience")
+	if audience == "" {
+		h.Logger.Error("The audience value is not provided.")
+		http.Error(w, "The audience value is not provided.", http.StatusForbidden)
 
 		return
 	}
@@ -143,6 +141,7 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	txnTokenRequest := common.TokenRequest{
+		Audience:           audience,
 		RequestedTokenType: requestedTokenType,
 		SubjectToken:       subjectToken,
 		SubjectTokenType:   subjectTokenType,
@@ -177,45 +176,71 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 	h.Logger.Info("Txn-Token request processed successfully.")
 }
 
-func (h *Handlers) ConfigWebhookHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GenerationEndpointRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.Logger.Error("Failed to read pushed generation rule request body", zap.Error(err))
+		h.Logger.Error("Failed to read pushed generation endpoint rule request body", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
+
 	defer r.Body.Close()
 
-	var generationRule v1alpha1.GenerationRule
+	var generationEndpointRule v1alpha1.GenerationEndpointRule
 
-	if err := json.Unmarshal(body, &generationRule); err != nil {
-		h.Logger.Error("Failed to unmarshal pushed generation rule", zap.Error(err))
+	if err := json.Unmarshal(body, &generationEndpointRule); err != nil {
+		h.Logger.Error("Failed to unmarshal pushed generation endpoint rule", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	h.Logger.Info("Received pushed generation rule",
-		zap.String("endpoint", generationRule.Endpoint),
-		zap.String("method", generationRule.Method))
+	h.Logger.Info("Received pushed generation endpoint rule",
+		zap.String("endpoint", generationEndpointRule.Endpoint),
+		zap.Any("method", generationEndpointRule.Method))
 
-	h.Service.AddGenerationRule(generationRule)
+	h.Service.AddGenerationEndpointRule(generationEndpointRule)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handlers) GenerationTokenRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.Logger.Error("Failed to read pushed generation token rule request body", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	defer r.Body.Close()
+
+	var generationTokenRule v1alpha1.GenerationTokenRule
+
+	if err := json.Unmarshal(body, &generationTokenRule); err != nil {
+		h.Logger.Error("Failed to unmarshal pushed generation token rule", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	h.Logger.Info("Received pushed generation token rule")
+
+	h.Service.UpdateGenerationTokenRule(generationTokenRule)
 
 	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handlers) GetGenerationRulesHandler(w http.ResponseWriter, r *http.Request) {
-	generationRules := h.Service.GetGenerationRules()
-
-	response, err := json.Marshal(generationRules)
+	generationRules, err := h.Service.GetGenerationRules()
 	if err != nil {
-		http.Error(w, "Failed to encode generation rules", http.StatusInternalServerError)
+		http.Error(w, "Failed to retrive generation rules JSON", http.StatusInternalServerError)
 
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	w.Write(generationRules)
 }

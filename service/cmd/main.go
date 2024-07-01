@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -13,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/handler"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/configsync"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
@@ -21,8 +18,6 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middleware"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/spire"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratgenerator"
 )
 
 const (
@@ -30,15 +25,12 @@ const (
 )
 
 type App struct {
-	Router               *mux.Router
-	Config               *config.AppConfig
-	SpireJwtSource       *workloadapi.JWTSource
-	SubjectTokenHandlers *subjecttokenhandler.TokenHandlers
-	HttpClient           *http.Client
-	GenerationRules      *v1alpha1.GenerationRules
-	TraTGenerator        *tratgenerator.TraTGenerator
-	AccessEvaluator      accessevaluation.AccessEvaluatorService
-	Logger               *zap.Logger
+	Router          *mux.Router
+	Config          *config.AppConfig
+	SpireJwtSource  *workloadapi.JWTSource
+	HttpClient      *http.Client
+	GenerationRules *v1alpha1.GenerationRulesImp
+	Logger          *zap.Logger
 }
 
 func main() {
@@ -53,33 +45,20 @@ func main() {
 		}
 	}()
 
-	if len(os.Args) < 2 {
-		logger.Error("No configuration file provided. Please specify the configuration path as an argument when running the service.",
-			zap.String("usage", "tratteria <config-path>"))
-		os.Exit(1)
+	appConfig, err := config.GetAppConfig()
+	if err != nil {
+		logger.Fatal("Error getting application configuration.", zap.Error(err))
 	}
 
-	configPath := os.Args[1]
-
-	appConfig := config.GetAppConfig(configPath)
-
-	err = keys.Initialize(appConfig)
+	err = keys.Initialize()
 	if err != nil {
 		logger.Fatal("Error initializing keys:", zap.Error(err))
 	}
 
 	httpClient := &http.Client{}
-	generationRules := v1alpha1.NewGenerationRules()
-	tratGenerator := tratgenerator.NewTraTGenerator(generationRules)
+	generationRules := v1alpha1.NewGenerationRulesImp(httpClient, logger)
 
-	var accessEvaluator accessevaluation.AccessEvaluatorService
-	if appConfig.EnableAccessEvaluation {
-		accessEvaluator = accessevaluation.NewAccessEvaluator(appConfig.AccessEvaluationAPI, httpClient)
-	} else {
-		accessEvaluator = &accessevaluation.NoOpAccessEvaluator{}
-	}
-
-	spireJwtSource, err := spire.GetSpireJwtSource(appConfig, logger)
+	spireJwtSource, err := spire.GetSpireJwtSource()
 	if err != nil {
 		logger.Fatal("Unable to create SPIRE JWTSource for fetching JWT-SVIDs.", zap.Error(err))
 	}
@@ -90,7 +69,7 @@ func main() {
 		defer spireJwtSource.Close()
 	}
 
-	configSyncClient, err := configsync.NewClient(ServerPort, url.URL(appConfig.TconfigdUrl), generationRules, httpClient, logger)
+	configSyncClient, err := configsync.NewClient(ServerPort, appConfig.TconfigdUrl, appConfig.MyNamespace, generationRules, httpClient, logger)
 	if err != nil {
 		logger.Fatal("Error creating configuration sync client for tconfigd", zap.Error(err))
 	}
@@ -99,26 +78,21 @@ func main() {
 		logger.Fatal("Error establishing communication with tconfigd", zap.Error(err))
 	}
 
-	subjectTokenHandlers := subjecttokenhandler.GetTokenHandlers(appConfig.SubjectTokens, logger)
-
 	app := &App{
-		Router:               mux.NewRouter(),
-		Config:               appConfig,
-		SpireJwtSource:       spireJwtSource,
-		SubjectTokenHandlers: subjectTokenHandlers,
-		HttpClient:           httpClient,
-		GenerationRules:      generationRules,
-		TraTGenerator:        tratGenerator,
-		AccessEvaluator:      accessEvaluator,
-		Logger:               logger,
+		Router:          mux.NewRouter(),
+		Config:          appConfig,
+		SpireJwtSource:  spireJwtSource,
+		HttpClient:      httpClient,
+		GenerationRules: generationRules,
+		Logger:          logger,
 	}
 
-	middleware := middleware.GetMiddleware(app.Config, app.SpireJwtSource, app.Logger)
+	middleware := middleware.GetMiddleware(app.Config, app.GenerationRules, app.SpireJwtSource, app.Logger)
 
 	app.Router.Use(middleware)
 
-	appService := service.NewService(app.Config, app.SpireJwtSource, app.SubjectTokenHandlers, app.GenerationRules, app.TraTGenerator, app.AccessEvaluator, app.Logger)
-	appHandler := handler.NewHandlers(appService, app.Config, app.Logger)
+	appService := service.NewService(app.SpireJwtSource, app.GenerationRules, app.Logger)
+	appHandler := handler.NewHandlers(appService, app.Logger)
 
 	app.initializeRoutes(appHandler)
 
@@ -134,8 +108,10 @@ func main() {
 }
 
 func (a *App) initializeRoutes(handlers *handler.Handlers) {
-	a.Router.HandleFunc("/.well-known/jwks.json", handlers.GetJwksHandler).Methods("GET")
 	a.Router.HandleFunc("/token_endpoint", handlers.TokenEndpointHandler).Methods("POST")
-	a.Router.HandleFunc("/config-webhook", handlers.ConfigWebhookHandler).Methods("POST")
+	a.Router.HandleFunc("/.well-known/jwks.json", handlers.GetJwksHandler).Methods("GET")
+
 	a.Router.HandleFunc("/generation-rules", handlers.GetGenerationRulesHandler).Methods("GET")
+	a.Router.HandleFunc("/generation-endpoint-rule-webhook", handlers.GenerationEndpointRuleWebhookHandler).Methods("POST")
+	a.Router.HandleFunc("/generation-token-rule-webhook", handlers.GenerationTokenRuleWebhookHandler).Methods("POST")
 }

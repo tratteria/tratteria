@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjectidentifier"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
 	"github.com/coreos/go-oidc"
@@ -20,7 +19,7 @@ type OIDCTokenHandler struct {
 	verifier     *oidc.IDTokenVerifier
 }
 
-func NewOIDCTokenHandler(oidcConfig *config.OIDC, logger *zap.Logger) *OIDCTokenHandler {
+func NewOIDCTokenHandler(oidcConfig *OIDCToken, logger *zap.Logger) *OIDCTokenHandler {
 	provider := getOIDCProvider(oidcConfig.ProviderURL, logger)
 
 	verifier := provider.Verifier(&oidc.Config{

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjectidentifier"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
 	"github.com/golang-jwt/jwt/v4"
@@ -19,8 +18,8 @@ type SelfSignedTokenHandler struct {
 	logger       *zap.Logger
 }
 
-func NewSelfSignedTokenHandler(selfSignedConfig *config.SelfSigned, logger *zap.Logger) *SelfSignedTokenHandler {
-	selfSignedTokenHandler := SelfSignedTokenHandler{validate: bool(selfSignedConfig.Validate), jwksEndpoint: selfSignedConfig.JwksEndpoint, logger: logger}
+func NewSelfSignedTokenHandler(selfSignedConfig *SelfSignedToken, logger *zap.Logger) *SelfSignedTokenHandler {
+	selfSignedTokenHandler := SelfSignedTokenHandler{validate: bool(selfSignedConfig.Validation), jwksEndpoint: selfSignedConfig.JWKSSEndpoint, logger: logger}
 
 	if !selfSignedTokenHandler.validate {
 		selfSignedTokenHandler.logger.Warn("Self-signed JWT validation is disabled; this poses a security risk")
