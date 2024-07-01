@@ -19,6 +19,7 @@ func GetAppConfig() (*AppConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing tconfigd url from environment variable: %w", err)
 	}
+
 	return &AppConfig{
 		TconfigdUrl: *tconfigdUrl,
 		SpiffeID:    spiffeid.RequireFromString(getEnv("SPIFFE_ID")),

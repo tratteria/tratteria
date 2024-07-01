@@ -235,7 +235,7 @@ func (h *Handlers) GenerationTokenRuleWebhookHandler(w http.ResponseWriter, r *h
 func (h *Handlers) GetGenerationRulesHandler(w http.ResponseWriter, r *http.Request) {
 	generationRules, err := h.Service.GetGenerationRules()
 	if err != nil {
-		http.Error(w, "Failed to retrive generation rules JSON", http.StatusInternalServerError)
+		http.Error(w, "Failed to retrieve generation rules JSON", http.StatusInternalServerError)
 
 		return
 	}

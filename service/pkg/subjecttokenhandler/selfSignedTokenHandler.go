@@ -19,7 +19,7 @@ type SelfSignedTokenHandler struct {
 }
 
 func NewSelfSignedTokenHandler(selfSignedConfig *SelfSignedToken, logger *zap.Logger) *SelfSignedTokenHandler {
-	selfSignedTokenHandler := SelfSignedTokenHandler{validate: bool(selfSignedConfig.Validation), jwksEndpoint: selfSignedConfig.JWKSSEndpoint, logger: logger}
+	selfSignedTokenHandler := SelfSignedTokenHandler{validate: selfSignedConfig.Validation, jwksEndpoint: selfSignedConfig.JWKSSEndpoint, logger: logger}
 
 	if !selfSignedTokenHandler.validate {
 		selfSignedTokenHandler.logger.Warn("Self-signed JWT validation is disabled; this poses a security risk")
