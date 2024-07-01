@@ -300,6 +300,7 @@ func (gri *GenerationRulesImp) GetAuthorizedSpifeeIDs() ([]spiffeid.ID, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		spiffeIDs = append(spiffeIDs, id)
 	}
 
