@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 )
 
@@ -24,13 +25,15 @@ var Str2TokenType = map[string]TokenType{
 type HttpMethod string
 
 const (
-	Get     HttpMethod = "GET"
-	Post    HttpMethod = "POST"
-	Put     HttpMethod = "PUT"
-	Delete  HttpMethod = "DELETE"
-	Patch   HttpMethod = "PATCH"
-	Options HttpMethod = "OPTIONS"
+	Get     HttpMethod = http.MethodGet
+	Post    HttpMethod = http.MethodPost
+	Put     HttpMethod = http.MethodPut
+	Delete  HttpMethod = http.MethodDelete
+	Patch   HttpMethod = http.MethodPatch
+	Options HttpMethod = http.MethodOptions
 )
+
+var HttpMethodList = []HttpMethod{Get, Post, Put, Delete, Patch, Options}
 
 type RequestDetails struct {
 	Path            string          `json:"endpoint"`
@@ -59,6 +62,7 @@ func (r *RequestDetails) Validate() error {
 }
 
 type TokenRequest struct {
+	Audience           string
 	RequestedTokenType TokenType
 	SubjectToken       string
 	SubjectTokenType   TokenType

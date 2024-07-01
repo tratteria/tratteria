@@ -12,14 +12,22 @@ import (
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/authz"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 )
 
-func spiffeMiddleware(config *config.AppConfig, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) func(http.Handler) http.Handler {
+func spiffeMiddleware(config *config.AppConfig, generationRules *v1alpha1.GenerationRulesImp, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) func(http.Handler) http.Handler {
 	publicEndpoints := authz.GetPublicEndpoints()
-	policies := authz.GetSpiffeAccessControlPolicies(config)
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			policies, err := authz.GetSpiffeAccessControlPolicies(generationRules)
+			if err != nil {
+				logger.Error("Error getting spiffe access control policies:", zap.Error(err))
+				http.Error(w, "Error getting spiffe access control policies.", http.StatusInternalServerError)
+
+				return
+			}
+
 			routePath, err := mux.CurrentRoute(r).GetPathTemplate()
 			if err != nil {
 				logger.Error("Error retrieving the route path template:", zap.Error(err))
@@ -42,7 +50,7 @@ func spiffeMiddleware(config *config.AppConfig, spireJwtSource *workloadapi.JWTS
 				return
 			}
 
-			svid, err := jwtsvid.ParseAndValidate(token, spireJwtSource, []string{config.Spiffe.ServiceID.String()})
+			svid, err := jwtsvid.ParseAndValidate(token, spireJwtSource, []string{config.SpiffeID.String()})
 			if err != nil {
 				logger.Error("Failed to validate JWT-SVID token.", zap.Error(err))
 				http.Error(w, "Unauthorized: Invalid JWT-SVID token", http.StatusUnauthorized)
@@ -76,11 +84,11 @@ func CombineMiddleware(middleware ...func(http.Handler) http.Handler) func(http.
 	}
 }
 
-func GetMiddleware(txnTokenConfig *config.AppConfig, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) func(http.Handler) http.Handler {
+func GetMiddleware(txnTokenConfig *config.AppConfig, generationRules *v1alpha1.GenerationRulesImp, spireJwtSource *workloadapi.JWTSource, logger *zap.Logger) func(http.Handler) http.Handler {
 	middlewareList := make([]func(http.Handler) http.Handler, 0)
 
 	if spireJwtSource != nil {
-		middlewareList = append(middlewareList, spiffeMiddleware(txnTokenConfig, spireJwtSource, logger))
+		middlewareList = append(middlewareList, spiffeMiddleware(txnTokenConfig, generationRules, spireJwtSource, logger))
 	}
 
 	return CombineMiddleware(middlewareList...)

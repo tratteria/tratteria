@@ -23,28 +23,30 @@ const (
 )
 
 type Client struct {
-	webhookPort            int
-	webhookIP              string
-	tconfigdUrl            url.URL
-	generationRulesManager v1alpha1.GenerationRulesManager
-	heartbeatInterval      time.Duration
-	httpClient             *http.Client
-	logger                 *zap.Logger
+	webhookPort       int
+	webhookIP         string
+	tconfigdUrl       url.URL
+	namespace         string
+	generationRules   *v1alpha1.GenerationRulesImp
+	heartbeatInterval time.Duration
+	httpClient        *http.Client
+	logger            *zap.Logger
 }
 
-func NewClient(WebhookPort int, TconfigdUrl url.URL, GenerationRulesManager v1alpha1.GenerationRulesManager, HttpClient *http.Client, Logger *zap.Logger) (*Client, error) {
+func NewClient(webhookPort int, tconfigdUrl url.URL, namespace string, generationRules *v1alpha1.GenerationRulesImp, httpClient *http.Client, logger *zap.Logger) (*Client, error) {
 	webhookIP, err := getLocalIP()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
-		webhookPort:            WebhookPort,
-		webhookIP:              webhookIP,
-		tconfigdUrl:            TconfigdUrl,
-		generationRulesManager: GenerationRulesManager,
-		httpClient:             HttpClient,
-		logger:                 Logger,
+		webhookPort:     webhookPort,
+		webhookIP:       webhookIP,
+		tconfigdUrl:     tconfigdUrl,
+		namespace:       namespace,
+		generationRules: generationRules,
+		httpClient:      httpClient,
+		logger:          logger,
 	}, nil
 }
 
@@ -52,6 +54,7 @@ type registrationRequest struct {
 	IPAddress   string `json:"ipAddress"`
 	Port        int    `json:"port"`
 	ServiceName string `json:"serviceName"`
+	Namespace   string `json:"namespace"`
 }
 
 type registrationResponse struct {
@@ -62,6 +65,7 @@ type heartBeatRequest struct {
 	IPAddress      string `json:"ipAddress"`
 	Port           int    `json:"port"`
 	ServiceName    string `json:"serviceName"`
+	Namespace      string `json:"namespace"`
 	RulesVersionID string `json:"rulesVersionId"`
 }
 
@@ -112,6 +116,7 @@ func (c *Client) register() error {
 		IPAddress:   c.webhookIP,
 		Port:        c.webhookPort,
 		ServiceName: TRATTERIA_SERVICE_NAME,
+		Namespace:   c.namespace,
 	}
 
 	jsonData, err := json.Marshal(registrationReq)
@@ -157,7 +162,8 @@ func (c *Client) startHeartbeat() {
 			IPAddress:      c.webhookIP,
 			Port:           c.webhookPort,
 			ServiceName:    TRATTERIA_SERVICE_NAME,
-			RulesVersionID: c.generationRulesManager.GetRulesVersionId(),
+			Namespace:      c.namespace,
+			RulesVersionID: c.generationRules.GetRulesVersionId(),
 		}
 
 		heartBeatRequestJson, err := json.Marshal(heartBeatReq)

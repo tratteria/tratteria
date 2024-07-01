@@ -3,9 +3,15 @@ package v1alpha1
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
+	"time"
 
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"go.uber.org/zap"
 
 	"errors"
 	"regexp"
@@ -14,21 +20,28 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type GenerationRulesManager interface {
-	AddRule(rule GenerationRule)
-	GetRules() map[string]map[string]GenerationRule
-	GetRulesVersionId() string
+type TokenConfig struct {
+	Issuer   string `json:"issuer"`
+	Audience string `json:"audience"`
+	LifeTime string `json:"lifeTime"`
 }
 
-type GenerationRulesApplier interface {
-	ApplyRule(path string, method common.HttpMethod, input map[string]interface{}) (string, map[string]interface{}, error)
+type Spiffe struct {
+	AuthorizedServiceIDs []string `json:"authorizedServiceIDs"`
 }
 
-type GenerationRule struct {
-	Endpoint   string     `json:"endpoint"`
-	Method     string     `json:"method"`
-	Purp       string     `json:"purp"`
-	AzdMapping AzdMapping `json:"azdmapping,omitempty"`
+type GenerationTokenRule struct {
+	Token               TokenConfig                           `json:"token"`
+	SubjectTokens       *subjecttokenhandler.SubjectTokens    `json:"subjectTokens"`
+	AccessEvaluationAPI *accessevaluation.AccessEvaluationAPI `json:"accessEvaluationAPI"`
+	Spiffe              Spiffe                                `json:"spiffe"`
+}
+
+type GenerationEndpointRule struct {
+	Endpoint   string            `json:"endpoint"`
+	Method     common.HttpMethod `json:"method"`
+	Purp       string            `json:"purp"`
+	AzdMapping AzdMapping        `json:"azdmapping,omitempty"`
 }
 
 type AzdMapping map[string]AzdField
@@ -36,41 +49,82 @@ type AzdField struct {
 	Value string `json:"value"`
 }
 
+type GenerationEndpointRules map[common.HttpMethod]map[string]GenerationEndpointRule
+
 type GenerationRules struct {
-	rules          map[string]map[string]GenerationRule
-	rulesVersionId string
-	mu             sync.RWMutex
+	TokenRules     *GenerationTokenRule    `json:"tokenRules"`
+	EndpointRules  GenerationEndpointRules `json:"endpointRules"`
+	RulesVersionId string                  `json:"rulesVersionId"`
 }
 
 func NewGenerationRules() *GenerationRules {
+	endpointRules := make(GenerationEndpointRules)
+
+	for _, method := range common.HttpMethodList {
+		endpointRules[method] = make(map[string]GenerationEndpointRule)
+	}
+
 	return &GenerationRules{
-		rules: make(map[string]map[string]GenerationRule),
+		EndpointRules: endpointRules,
 	}
 }
 
-func (m *GenerationRules) AddRule(rule GenerationRule) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if _, exist := m.rules[rule.Method]; !exist {
-		m.rules[rule.Method] = make(map[string]GenerationRule)
-	}
-
-	m.rules[rule.Method][rule.Endpoint] = rule
+type GenerationRulesImp struct {
+	rules                *GenerationRules
+	subjectTokenHandlers *subjecttokenhandler.TokenHandlers
+	accessevaluator      *accessevaluation.AccessEvaluator
+	httpClient           *http.Client
+	logger               *zap.Logger
+	mu                   sync.RWMutex
 }
 
-func (m *GenerationRules) GetRules() map[string]map[string]GenerationRule {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+func NewGenerationRulesImp(httpClient *http.Client, logger *zap.Logger) *GenerationRulesImp {
+	return &GenerationRulesImp{
+		rules:      NewGenerationRules(),
+		httpClient: httpClient,
+		logger:     logger,
+	}
+}
 
-	return m.rules
+func (gri *GenerationRulesImp) AddEndpointRule(generationEndpointRule GenerationEndpointRule) error {
+	gri.mu.Lock()
+	defer gri.mu.Unlock()
+
+	if _, exist := gri.rules.EndpointRules[generationEndpointRule.Method]; !exist {
+		return fmt.Errorf("invalid HTTP method: %s", string(generationEndpointRule.Method))
+	}
+
+	gri.rules.EndpointRules[generationEndpointRule.Method][generationEndpointRule.Endpoint] = generationEndpointRule
+
+	return nil
+}
+
+func (gri *GenerationRulesImp) UpdateTokenRule(generationTokenRule GenerationTokenRule) {
+	gri.mu.Lock()
+	defer gri.mu.Unlock()
+
+	gri.rules.TokenRules = &generationTokenRule
+	gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(generationTokenRule.SubjectTokens, gri.logger)
+	gri.accessevaluator = accessevaluation.NewAccessEvaluator(generationTokenRule.AccessEvaluationAPI, gri.httpClient)
+}
+
+func (gri *GenerationRulesImp) GetRulesJSON() (json.RawMessage, error) {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
+
+	jsonData, err := json.Marshal(gri.rules)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonData, nil
 }
 
 // Read lock should be take by the function calling matchRule.
-func (m *GenerationRules) matchRule(path string, method common.HttpMethod) (GenerationRule, map[string]string, error) {
-	methodRuleMap, ok := m.rules[string(method)]
+func (gri *GenerationRulesImp) matchRule(path string, method common.HttpMethod) (GenerationEndpointRule, map[string]string, error) {
+	methodRuleMap, ok := gri.rules.EndpointRules[method]
 	if !ok {
-		return GenerationRule{}, nil, fmt.Errorf("no rules found for %s HTTP method", string(method))
+		return GenerationEndpointRule{}, nil, fmt.Errorf("invalid HTTP method: %s", string(method))
 	}
 
 	for pattern, rule := range methodRuleMap {
@@ -93,7 +147,7 @@ func (m *GenerationRules) matchRule(path string, method common.HttpMethod) (Gene
 		}
 	}
 
-	return GenerationRule{}, nil, errors.New("no matching rule found")
+	return GenerationEndpointRule{}, nil, errors.New("no matching rule found")
 }
 
 func convertToRegex(template string) string {
@@ -102,18 +156,26 @@ func convertToRegex(template string) string {
 	return "^" + r.Replace(template) + "$"
 }
 
-func (m *GenerationRules) GetRulesVersionId() string {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+func (gri *GenerationRulesImp) GetRulesVersionId() string {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
 
-	return m.rulesVersionId
+	return gri.rules.RulesVersionId
 }
 
-func (m *GenerationRules) ApplyRule(path string, method common.HttpMethod, input map[string]interface{}) (string, map[string]interface{}, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+func (gri *GenerationRulesImp) ConstructScopeAndAzd(txnTokenRequest *common.TokenRequest) (string, map[string]interface{}, error) {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
 
-	generationRule, pathParameter, err := m.matchRule(path, method)
+	path := txnTokenRequest.RequestDetails.Path
+	method := txnTokenRequest.RequestDetails.Method
+
+	input := make(map[string]interface{})
+	input["body"] = txnTokenRequest.RequestDetails.Body
+	input["headers"] = txnTokenRequest.RequestDetails.Headers
+	input["queryParameters"] = txnTokenRequest.RequestDetails.QueryParameters
+
+	generationEndpointRule, pathParameter, err := gri.matchRule(path, method)
 	if err != nil {
 		return "", nil, fmt.Errorf("error matching generation rule for %s path and %s method: %w", path, string(method), err)
 	}
@@ -122,16 +184,20 @@ func (m *GenerationRules) ApplyRule(path string, method common.HttpMethod, input
 		input[par] = val
 	}
 
-	azd, err := m.computeAzd(generationRule.AzdMapping, input)
-	if err != nil {
-		return "", nil, fmt.Errorf("error computing azd from generation rule for %s path and %s method: %w", path, string(method), err)
+	if generationEndpointRule.AzdMapping == nil {
+		return generationEndpointRule.Purp, nil, nil
 	}
 
-	return generationRule.Purp, azd, nil
+	azd, err := gri.computeAzd(generationEndpointRule.AzdMapping, input)
+	if err != nil {
+		return "", nil, fmt.Errorf("error computing azd from generation endpoint rule for %s path and %s method: %w", path, string(method), err)
+	}
+
+	return generationEndpointRule.Purp, azd, nil
 }
 
 // Read lock should be take by the function calling computeAzd.
-func (m *GenerationRules) computeAzd(azdMapping AzdMapping, input map[string]interface{}) (map[string]interface{}, error) {
+func (gri *GenerationRulesImp) computeAzd(azdMapping AzdMapping, input map[string]interface{}) (map[string]interface{}, error) {
 	azd := make(map[string]interface{})
 
 	jsonInput, err := marshalToJson(input)
@@ -176,4 +242,66 @@ func marshalToJson(data map[string]interface{}) (string, error) {
 	}
 
 	return string(bytes), nil
+}
+
+func (gri *GenerationRulesImp) GetIssuer() string {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
+
+	return gri.rules.TokenRules.Token.Issuer
+}
+
+func (gri *GenerationRulesImp) GetAudience() string {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
+
+	return gri.rules.TokenRules.Token.Audience
+}
+
+func (gri *GenerationRulesImp) GetTokenLifetime() (time.Duration, error) {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
+
+	duration, err := time.ParseDuration(gri.rules.TokenRules.Token.LifeTime)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing token lifetime: %v", err)
+	}
+
+	return duration, nil
+}
+
+func (gri *GenerationRulesImp) EvaluateAccess(txnTokenRequest *common.TokenRequest, subjectTokenClaims interface{}, scope string, azd map[string]any) (bool, error) {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
+
+	if !gri.accessevaluator.IsAccessEvaluationEnabled() {
+		return true, nil
+	}
+
+	// TODO: implemente access evaluation
+
+	return true, nil
+}
+
+func (gri *GenerationRulesImp) GetSubjectTokenHandler(tokenType common.TokenType) (subjecttokenhandler.TokenHandler, error) {
+	return gri.subjectTokenHandlers.GetHandler(tokenType)
+}
+
+func (gri *GenerationRulesImp) GetAuthorizedSpifeeIDs() ([]spiffeid.ID, error) {
+	if gri.rules.TokenRules == nil {
+		return []spiffeid.ID{}, nil
+	}
+
+	stringIDs := gri.rules.TokenRules.Spiffe.AuthorizedServiceIDs
+	spiffeIDs := make([]spiffeid.ID, 0, len(stringIDs))
+
+	for _, idStr := range stringIDs {
+		id, err := spiffeid.FromString(idStr)
+		if err != nil {
+			return nil, err
+		}
+		spiffeIDs = append(spiffeIDs, id)
+	}
+
+	return spiffeIDs, nil
 }

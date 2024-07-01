@@ -6,10 +6,25 @@ import (
 	"fmt"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjectidentifier"
 	"go.uber.org/zap"
 )
+
+type SubjectTokens struct {
+	OIDC       *OIDCToken       `json:"OIDC,omitempty"`
+	SelfSigned *SelfSignedToken `json:"selfSigned,omitempty"`
+}
+
+type OIDCToken struct {
+	ClientID     string `json:"clientId"`
+	ProviderURL  string `json:"providerURL"`
+	SubjectField string `json:"subjectField"`
+}
+
+type SelfSignedToken struct {
+	Validation    bool   `json:"validation"`
+	JWKSSEndpoint string `json:"jwksEndpoint"`
+}
 
 type TokenHandler interface {
 	VerifyAndParse(ctx context.Context, token string) (interface{}, error)
@@ -21,7 +36,7 @@ type TokenHandlers struct {
 	selfSignedTokenHandler TokenHandler
 }
 
-func GetTokenHandlers(subjectTokens *config.SubjectTokens, logger *zap.Logger) *TokenHandlers {
+func NewTokenHandlers(subjectTokens *SubjectTokens, logger *zap.Logger) *TokenHandlers {
 	handlers := &TokenHandlers{}
 
 	if subjectTokens.OIDC != nil {
