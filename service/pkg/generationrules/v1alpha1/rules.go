@@ -31,10 +31,10 @@ type Spiffe struct {
 }
 
 type GenerationTokenRule struct {
-	Token               TokenConfig                           `json:"token"`
-	SubjectTokens       *subjecttokenhandler.SubjectTokens    `json:"subjectTokens"`
-	AccessEvaluationAPI *accessevaluation.AccessEvaluationAPI `json:"accessEvaluationAPI"`
-	Spiffe              Spiffe                                `json:"spiffe"`
+	Token                               TokenConfig                           `json:"token"`
+	SubjectTokens                       *subjecttokenhandler.SubjectTokens    `json:"subjectTokens"`
+	AccessEvaluationAPI                 *accessevaluation.AccessEvaluationAPI `json:"accessEvaluationAPI"`
+	TokenGenerationAuthorizedServiceIds []string                              `json:"tokenGenerationAuthorizedServiceIds"`
 }
 
 type GenerationEndpointRule struct {
@@ -292,7 +292,7 @@ func (gri *GenerationRulesImp) GetAuthorizedSpifeeIDs() ([]spiffeid.ID, error) {
 		return []spiffeid.ID{}, nil
 	}
 
-	stringIDs := gri.rules.TokenRules.Spiffe.AuthorizedServiceIDs
+	stringIDs := gri.rules.TokenRules.TokenGenerationAuthorizedServiceIds
 	spiffeIDs := make([]spiffeid.ID, 0, len(stringIDs))
 
 	for _, idStr := range stringIDs {
