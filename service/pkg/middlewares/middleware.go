@@ -21,16 +21,17 @@ func AuthorizeSpiffeID(authorizedIDs func() ([]spiffeid.ID, error)) func(http.Ha
 			spiffeID, err := getSpiffeIDFromCert(r.TLS.PeerCertificates[0])
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusForbidden)
-				
+
 				return
 			}
 
 			authorizedIDs, err := authorizedIDs()
 			if err != nil {
 				http.Error(w, "Error authorizing request", http.StatusInternalServerError)
-				
+
 				return
 			}
+
 			authorizedIDStrings := make([]string, len(authorizedIDs))
 			for i, id := range authorizedIDs {
 				authorizedIDStrings[i] = id.String()

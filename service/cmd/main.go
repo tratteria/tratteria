@@ -91,7 +91,9 @@ func main() {
 		}
 	}()
 
+	//nolint:unparam
 	tconfigdSpiffeID := func() ([]spiffeid.ID, error) { return []spiffeid.ID{appConfig.TconfigdSpiffeID}, nil }
+
 	traTGenAuthorizedSpiffeIDs := func() ([]spiffeid.ID, error) { return generationRules.GetTraTGenerationAuthorizedServicesSpifeeIDs() }
 
 	go func() {
