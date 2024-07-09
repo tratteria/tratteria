@@ -1,0 +1,1 @@
+docker build -t tratteria:latest -f ../service/Dockerfile ../service/

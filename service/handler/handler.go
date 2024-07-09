@@ -9,7 +9,7 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratteriaerrors"
 
 	"go.uber.org/zap"
 )
@@ -154,9 +154,9 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		h.Logger.Error("Error generating txn token.", zap.Error(err))
 
 		switch err {
-		case txntokenerrors.ErrParsingSubjectToken, txntokenerrors.ErrInvalidSubjectTokenClaims, txntokenerrors.ErrUnsupportedTokenType, txntokenerrors.ErrSubjectFieldNotFound:
+		case tratteriaerrors.ErrParsingSubjectToken, tratteriaerrors.ErrInvalidSubjectTokenClaims, tratteriaerrors.ErrUnsupportedTokenType, tratteriaerrors.ErrSubjectFieldNotFound:
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case txntokenerrors.ErrAccessDenied:
+		case tratteriaerrors.ErrAccessDenied:
 			http.Error(w, err.Error(), http.StatusForbidden)
 		default:
 			http.Error(w, "Internal server error", http.StatusInternalServerError)

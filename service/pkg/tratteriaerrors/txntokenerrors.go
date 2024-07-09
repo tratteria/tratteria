@@ -1,4 +1,4 @@
-package txntokenerrors
+package tratteriaerrors
 
 import (
 	"errors"

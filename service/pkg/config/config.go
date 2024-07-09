@@ -9,9 +9,9 @@ import (
 )
 
 type AppConfig struct {
-	TconfigdUrl url.URL
-	SpiffeID    spiffeid.ID
-	MyNamespace string
+	TconfigdUrl      url.URL
+	TconfigdSpiffeID spiffeid.ID
+	MyNamespace      string
 }
 
 func GetAppConfig() (*AppConfig, error) {
@@ -21,9 +21,9 @@ func GetAppConfig() (*AppConfig, error) {
 	}
 
 	return &AppConfig{
-		TconfigdUrl: *tconfigdUrl,
-		SpiffeID:    spiffeid.RequireFromString(getEnv("SPIFFE_ID")),
-		MyNamespace: getEnv("MY_NAMESPACE"),
+		TconfigdUrl:      *tconfigdUrl,
+		TconfigdSpiffeID: spiffeid.RequireFromString(getEnv("TCONFIGD_SPIFFE_ID")),
+		MyNamespace:      getEnv("MY_NAMESPACE"),
 	}, nil
 }
 

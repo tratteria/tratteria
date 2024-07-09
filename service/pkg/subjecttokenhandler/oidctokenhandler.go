@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjectidentifier"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratteriaerrors"
 	"github.com/coreos/go-oidc"
 	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
@@ -42,7 +42,7 @@ func (o *OIDCTokenHandler) VerifyAndParse(ctx context.Context, token string) (in
 	var claims jwt.MapClaims
 
 	if err := idToken.Claims(&claims); err != nil {
-		return nil, txntokenerrors.ErrInvalidSubjectTokenClaims
+		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
 	}
 
 	return claims, nil
@@ -51,12 +51,12 @@ func (o *OIDCTokenHandler) VerifyAndParse(ctx context.Context, token string) (in
 func (o *OIDCTokenHandler) ExtractSubject(claims interface{}) (subjectidentifier.Identifier, error) {
 	mapClaims, ok := claims.(jwt.MapClaims)
 	if !ok {
-		return nil, txntokenerrors.ErrInvalidSubjectTokenClaims
+		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
 	}
 
 	subjectValue, ok := mapClaims[o.subjectField].(string)
 	if !ok {
-		return nil, txntokenerrors.ErrSubjectFieldNotFound
+		return nil, tratteriaerrors.ErrSubjectFieldNotFound
 	}
 
 	return subjectidentifier.NewIdentifier(o.subjectField, subjectValue)

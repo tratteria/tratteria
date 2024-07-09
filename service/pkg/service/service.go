@@ -8,23 +8,20 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratteriaerrors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 )
 
 type Service struct {
-	spireJwtSource  *workloadapi.JWTSource
 	generationRules *v1alpha1.GenerationRulesImp
 	logger          *zap.Logger
 }
 
-func NewService(spireJwtSource *workloadapi.JWTSource, generationRules *v1alpha1.GenerationRulesImp, logger *zap.Logger) *Service {
+func NewService(generationRules *v1alpha1.GenerationRulesImp, logger *zap.Logger) *Service {
 	return &Service{
-		spireJwtSource:  spireJwtSource,
 		generationRules: generationRules,
 		logger:          logger,
 	}
@@ -88,7 +85,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 			zap.Any("scope", scope),
 		)
 
-		return &TokenResponse{}, txntokenerrors.ErrAccessDenied
+		return &TokenResponse{}, tratteriaerrors.ErrAccessDenied
 	}
 
 	s.logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("scope", scope))

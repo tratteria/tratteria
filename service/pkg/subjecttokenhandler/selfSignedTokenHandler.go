@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjectidentifier"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/txntokenerrors"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratteriaerrors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/lestrrat-go/jwx/jwk"
 	"go.uber.org/zap"
@@ -62,7 +62,7 @@ func (s *SelfSignedTokenHandler) VerifyAndParse(ctx context.Context, token strin
 			return claims, nil
 		}
 
-		return nil, txntokenerrors.ErrInvalidSubjectTokenClaims
+		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
 	} else {
 		s.logger.Warn("Parsing token without validating; this poses a security risk")
 
@@ -75,19 +75,19 @@ func (s *SelfSignedTokenHandler) VerifyAndParse(ctx context.Context, token strin
 			return claims, nil
 		}
 
-		return nil, txntokenerrors.ErrInvalidSubjectTokenClaims
+		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
 	}
 }
 
 func (o *SelfSignedTokenHandler) ExtractSubject(claims interface{}) (subjectidentifier.Identifier, error) {
 	mapClaims, ok := claims.(jwt.MapClaims)
 	if !ok {
-		return nil, txntokenerrors.ErrInvalidSubjectTokenClaims
+		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
 	}
 
 	subValue, ok := mapClaims["sub"]
 	if !ok {
-		return nil, txntokenerrors.ErrSubjectFieldNotFound
+		return nil, tratteriaerrors.ErrSubjectFieldNotFound
 	}
 
 	return subValue, nil

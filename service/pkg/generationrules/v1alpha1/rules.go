@@ -287,7 +287,7 @@ func (gri *GenerationRulesImp) GetSubjectTokenHandler(tokenType common.TokenType
 	return gri.subjectTokenHandlers.GetHandler(tokenType)
 }
 
-func (gri *GenerationRulesImp) GetAuthorizedSpifeeIDs() ([]spiffeid.ID, error) {
+func (gri *GenerationRulesImp) GetTraTGenerationAuthorizedServicesSpifeeIDs() ([]spiffeid.ID, error) {
 	if gri.rules.TokenRules == nil {
 		return []spiffeid.ID{}, nil
 	}
