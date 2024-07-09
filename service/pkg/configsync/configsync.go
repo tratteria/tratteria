@@ -11,13 +11,15 @@ import (
 	"time"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
+	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 )
 
 const (
 	MAX_REGISTRATION_ATTEMPTS       = 5
 	FAILED_HEARTBEAT_RETRY_INTERVAL = 5 * time.Second
-	TRATTERIA_SERVICE_NAME          = "TRATTERIA"
 	REGISTRATION_PATH               = "register"
 	HEARTBEAT_PATH                  = "heartbeat"
 )
@@ -33,10 +35,18 @@ type Client struct {
 	logger            *zap.Logger
 }
 
-func NewClient(webhookPort int, tconfigdUrl url.URL, namespace string, generationRules *v1alpha1.GenerationRulesImp, httpClient *http.Client, logger *zap.Logger) (*Client, error) {
+func NewClient(webhookPort int, tconfigdUrl url.URL, tconfigdSpiffeId spiffeid.ID, namespace string, generationRules *v1alpha1.GenerationRulesImp, x509Source *workloadapi.X509Source, logger *zap.Logger) (*Client, error) {
 	webhookIP, err := getLocalIP()
 	if err != nil {
 		return nil, err
+	}
+
+	tlsConfig := tlsconfig.MTLSClientConfig(x509Source, x509Source, tlsconfig.AuthorizeID(tconfigdSpiffeId))
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
 	}
 
 	return &Client{
@@ -45,16 +55,15 @@ func NewClient(webhookPort int, tconfigdUrl url.URL, namespace string, generatio
 		tconfigdUrl:     tconfigdUrl,
 		namespace:       namespace,
 		generationRules: generationRules,
-		httpClient:      httpClient,
+		httpClient:      client,
 		logger:          logger,
 	}, nil
 }
 
 type registrationRequest struct {
-	IPAddress   string `json:"ipAddress"`
-	Port        int    `json:"port"`
-	ServiceName string `json:"serviceName"`
-	Namespace   string `json:"namespace"`
+	IPAddress string `json:"ipAddress"`
+	Port      int    `json:"port"`
+	Namespace string `json:"namespace"`
 }
 
 type registrationResponse struct {
@@ -64,7 +73,6 @@ type registrationResponse struct {
 type heartBeatRequest struct {
 	IPAddress      string `json:"ipAddress"`
 	Port           int    `json:"port"`
-	ServiceName    string `json:"serviceName"`
 	Namespace      string `json:"namespace"`
 	RulesVersionID string `json:"rulesVersionId"`
 }
@@ -113,10 +121,9 @@ func (c *Client) registerWithBackoff() error {
 
 func (c *Client) register() error {
 	registrationReq := registrationRequest{
-		IPAddress:   c.webhookIP,
-		Port:        c.webhookPort,
-		ServiceName: TRATTERIA_SERVICE_NAME,
-		Namespace:   c.namespace,
+		IPAddress: c.webhookIP,
+		Port:      c.webhookPort,
+		Namespace: c.namespace,
 	}
 
 	jsonData, err := json.Marshal(registrationReq)
@@ -161,7 +168,6 @@ func (c *Client) startHeartbeat() {
 		heartBeatReq := heartBeatRequest{
 			IPAddress:      c.webhookIP,
 			Port:           c.webhookPort,
-			ServiceName:    TRATTERIA_SERVICE_NAME,
 			Namespace:      c.namespace,
 			RulesVersionID: c.generationRules.GetRulesVersionId(),
 		}
