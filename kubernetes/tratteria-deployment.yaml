@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tratteria
+  namespace: [your-namespace]  # Replace [your-namespace] with your Kubernetes namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tratteria
+  template:
+    metadata:
+      labels:
+        app: tratteria
+    spec:
+      serviceAccountName: tratteria-service-account
+      containers:
+        - image: tratteria
+          name: tratteria
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+              protocol: TCP
+            - containerPort: 443
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /run/spire/sockets
+              name: spire-agent-socket
+              readOnly: true
+          env:
+            - name: TCONFIGD_SPIFFE_ID
+              value: spiffe://[your-trust-domain]/tconfigd # Replace [your-trust-domain] with your Kubernetes namespace
+            - name: TCONFIGD_URL
+              value: https://tconfigd.tratteria-system.svc.cluster.local:8443
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: MY_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      restartPolicy: Always
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets # Host directory where the SPIRE agent's socket resides; update this if different in your environment
+            type: Directory
