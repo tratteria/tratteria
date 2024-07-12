@@ -4,7 +4,7 @@ metadata:
   name: tratteria
   namespace: [your-namespace]  # Replace [your-namespace] with your Kubernetes namespace
 spec:
-  replicas: 1
+  replicas: 1 # Set the number of Tratteria instances you want running. Adjust this number based on your scalability needs.
   selector:
     matchLabels:
       app: tratteria
