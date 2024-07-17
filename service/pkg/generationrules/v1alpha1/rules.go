@@ -52,9 +52,8 @@ type AzdField struct {
 type GenerationEndpointRules map[common.HttpMethod]map[string]GenerationEndpointRule
 
 type GenerationRules struct {
-	TokenRules     *GenerationTokenRule    `json:"tokenRules"`
-	EndpointRules  GenerationEndpointRules `json:"endpointRules"`
-	RulesVersionId string                  `json:"rulesVersionId"`
+	TokenRules    *GenerationTokenRule    `json:"tokenRules"`
+	EndpointRules GenerationEndpointRules `json:"endpointRules"`
 }
 
 func NewGenerationRules() *GenerationRules {
@@ -154,13 +153,6 @@ func convertToRegex(template string) string {
 	r := strings.NewReplacer("{#", "(?P<", "}", ">[^/]+)")
 
 	return "^" + r.Replace(template) + "$"
-}
-
-func (gri *GenerationRulesImp) GetRulesVersionId() string {
-	gri.mu.RLock()
-	defer gri.mu.RUnlock()
-
-	return gri.rules.RulesVersionId
 }
 
 func (gri *GenerationRulesImp) ConstructScopeAndAzd(txnTokenRequest *common.TokenRequest) (string, map[string]interface{}, error) {
@@ -305,4 +297,35 @@ func (gri *GenerationRulesImp) GetTraTGenerationAuthorizedServicesSpifeeIDs() ([
 	}
 
 	return spiffeIDs, nil
+}
+
+type GenerationRulesTconfigd struct {
+	GenerationTokenRule     *GenerationTokenRule      `json:"generationTokenRule"`
+	GenerationEndpointRules []*GenerationEndpointRule `json:"generationEndpointRules"`
+}
+
+func (gri *GenerationRulesImp) UpdateCompleteRules(generationRulesTconfigd GenerationRulesTconfigd) error {
+	gri.mu.Lock()
+	defer gri.mu.Unlock()
+
+	gri.rules.TokenRules = generationRulesTconfigd.GenerationTokenRule
+
+	if gri.rules.TokenRules != nil {
+		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.rules.TokenRules.SubjectTokens, gri.logger)
+		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.rules.TokenRules.AccessEvaluationAPI, gri.httpClient)
+	}
+
+	endpointRules := make(GenerationEndpointRules)
+
+	for _, method := range common.HttpMethodList {
+		endpointRules[method] = make(map[string]GenerationEndpointRule)
+	}
+
+	for _, endpointRule := range generationRulesTconfigd.GenerationEndpointRules {
+		endpointRules[endpointRule.Method][endpointRule.Endpoint] = *endpointRule
+	}
+
+	gri.rules.EndpointRules = endpointRules
+
+	return nil
 }
