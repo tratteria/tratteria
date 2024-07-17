@@ -67,7 +67,8 @@ type registrationRequest struct {
 }
 
 type registrationResponse struct {
-	HeartBeatIntervalMinutes int `json:"heartBeatIntervalMinutes"`
+	HeartBeatIntervalMinutes int                              `json:"heartBeatIntervalMinutes"`
+	GenerationRules          v1alpha1.GenerationRulesTconfigd `json:"generationRules"`
 }
 
 type heartBeatRequest struct {
@@ -158,6 +159,8 @@ func (c *Client) register() error {
 
 	c.heartbeatInterval = time.Duration(registrationResp.HeartBeatIntervalMinutes) * time.Minute
 
+	c.generationRules.UpdateCompleteRules(registrationResp.GenerationRules)
+
 	return nil
 }
 
@@ -166,10 +169,9 @@ func (c *Client) startHeartbeat() {
 
 	for {
 		heartBeatReq := heartBeatRequest{
-			IPAddress:      c.webhookIP,
-			Port:           c.webhookPort,
-			Namespace:      c.namespace,
-			RulesVersionID: c.generationRules.GetRulesVersionId(),
+			IPAddress: c.webhookIP,
+			Port:      c.webhookPort,
+			Namespace: c.namespace,
 		}
 
 		heartBeatRequestJson, err := json.Marshal(heartBeatReq)
