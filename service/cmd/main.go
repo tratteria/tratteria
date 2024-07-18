@@ -140,8 +140,8 @@ func startHTTPSServer(handlers *handler.Handlers, x509Source *workloadapi.X509So
 
 	router.HandleFunc("/.well-known/jwks.json", handlers.GetJwksHandler).Methods("GET")
 	router.Handle("/token_endpoint", middlewares.AuthorizeSpiffeID(traTGenAuthorizedSpiffeIDs)(http.HandlerFunc(handlers.TokenEndpointHandler))).Methods("POST")
-	router.Handle("/generation-endpoint-rule-webhook", middlewares.AuthorizeSpiffeID(tconfigdSpiffeID)(http.HandlerFunc(handlers.GenerationEndpointRuleWebhookHandler))).Methods("POST")
-	router.Handle("/generation-token-rule-webhook", middlewares.AuthorizeSpiffeID(tconfigdSpiffeID)(http.HandlerFunc(handlers.GenerationTokenRuleWebhookHandler))).Methods("POST")
+	router.Handle("/generation-trat-rule-webhook", middlewares.AuthorizeSpiffeID(tconfigdSpiffeID)(http.HandlerFunc(handlers.GenerationTraTRuleWebhookHandler))).Methods("POST")
+	router.Handle("/generation-tratteria-config-rule-webhook", middlewares.AuthorizeSpiffeID(tconfigdSpiffeID)(http.HandlerFunc(handlers.GenerationTratteriaConfigRuleWebhookHandler))).Methods("POST")
 
 	srv := &http.Server{
 		Handler:      router,
