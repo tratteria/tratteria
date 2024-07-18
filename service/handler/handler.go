@@ -176,10 +176,10 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 	h.Logger.Info("Txn-Token request processed successfully.")
 }
 
-func (h *Handlers) GenerationEndpointRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GenerationTraTRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.Logger.Error("Failed to read pushed generation endpoint rule request body", zap.Error(err))
+		h.Logger.Error("Failed to read pushed generation trat rule request body", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -187,28 +187,28 @@ func (h *Handlers) GenerationEndpointRuleWebhookHandler(w http.ResponseWriter, r
 
 	defer r.Body.Close()
 
-	var generationEndpointRule v1alpha1.GenerationEndpointRule
+	var generationTraTRule v1alpha1.GenerationTraTRule
 
-	if err := json.Unmarshal(body, &generationEndpointRule); err != nil {
-		h.Logger.Error("Failed to unmarshal pushed generation endpoint rule", zap.Error(err))
+	if err := json.Unmarshal(body, &generationTraTRule); err != nil {
+		h.Logger.Error("Failed to unmarshal pushed generation trat rule", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	h.Logger.Info("Received pushed generation endpoint rule",
-		zap.String("endpoint", generationEndpointRule.Endpoint),
-		zap.Any("method", generationEndpointRule.Method))
+	h.Logger.Info("Received pushed generation trat rule",
+		zap.String("endpoint", generationTraTRule.Endpoint),
+		zap.Any("method", generationTraTRule.Method))
 
-	h.Service.AddGenerationEndpointRule(generationEndpointRule)
+	h.Service.AddGenerationTraTRule(generationTraTRule)
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handlers) GenerationTokenRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GenerationTratteriaConfigRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.Logger.Error("Failed to read pushed generation token rule request body", zap.Error(err))
+		h.Logger.Error("Failed to read pushed generation tratteria config rule request body", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -216,18 +216,18 @@ func (h *Handlers) GenerationTokenRuleWebhookHandler(w http.ResponseWriter, r *h
 
 	defer r.Body.Close()
 
-	var generationTokenRule v1alpha1.GenerationTokenRule
+	var generationTratteriaConfigRule v1alpha1.GenerationTratteriaConfigRule
 
-	if err := json.Unmarshal(body, &generationTokenRule); err != nil {
-		h.Logger.Error("Failed to unmarshal pushed generation token rule", zap.Error(err))
+	if err := json.Unmarshal(body, &generationTratteriaConfigRule); err != nil {
+		h.Logger.Error("Failed to unmarshal pushed generation tratteria config rule", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	h.Logger.Info("Received pushed generation token rule")
+	h.Logger.Info("Received pushed generation tratteria config rule")
 
-	h.Service.UpdateGenerationTokenRule(generationTokenRule)
+	h.Service.UpdateGenerationTokenRule(generationTratteriaConfigRule)
 
 	w.WriteHeader(http.StatusOK)
 }
