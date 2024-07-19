@@ -15,9 +15,8 @@ spec:
     spec:
       serviceAccountName: tratteria-service-account
       containers:
-        - image: tratteria
+        - image: ghcr.io/tratteria/tratteria:latest
           name: tratteria
-          imagePullPolicy: Never
           ports:
             - containerPort: 80
               protocol: TCP
