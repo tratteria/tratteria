@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install -g semantic-release @semantic-release/changelog @semantic-release/git
+          npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github
           npm list -g semantic-release
 
       - name: Verify Installation
