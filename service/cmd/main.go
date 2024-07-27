@@ -90,16 +90,12 @@ func main() {
 		}
 	}()
 
-	//nolint:unparam
-	tconfigdSpiffeID := func() ([]spiffeid.ID, error) { return []spiffeid.ID{appConfig.TconfigdSpiffeID}, nil }
-
 	traTGenAuthorizedSpiffeIDs := func() ([]spiffeid.ID, error) { return generationRules.GetTraTGenerationAuthorizedServicesSpifeeIDs() }
 
 	go func() {
 		if err := startHTTPSServer(
 			appHandler,
 			x509Source,
-			tconfigdSpiffeID,
 			traTGenAuthorizedSpiffeIDs,
 			logger,
 		); err != nil {
@@ -134,7 +130,7 @@ func startHTTPServer(handlers *handler.Handlers, logger *zap.Logger) error {
 	return nil
 }
 
-func startHTTPSServer(handlers *handler.Handlers, x509Source *workloadapi.X509Source, tconfigdSpiffeID func() ([]spiffeid.ID, error), traTGenAuthorizedSpiffeIDs func() ([]spiffeid.ID, error), logger *zap.Logger) error {
+func startHTTPSServer(handlers *handler.Handlers, x509Source *workloadapi.X509Source, traTGenAuthorizedSpiffeIDs func() ([]spiffeid.ID, error), logger *zap.Logger) error {
 	router := mux.NewRouter()
 
 	router.Handle("/token_endpoint", middlewares.AuthorizeSpiffeID(traTGenAuthorizedSpiffeIDs)(http.HandlerFunc(handlers.TokenEndpointHandler))).Methods("POST")
