@@ -137,14 +137,6 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 	return tokenResponse, nil
 }
 
-func (s *Service) AddGenerationTraTRule(pushedGenerationEndpointRule v1alpha1.GenerationTraTRule) {
-	s.generationRules.AddTraTRule(pushedGenerationEndpointRule)
-}
-
 func (s *Service) GetGenerationRules() (json.RawMessage, error) {
 	return s.generationRules.GetRulesJSON()
-}
-
-func (s *Service) UpdateGenerationTokenRule(pushedGenerationTokenRule v1alpha1.GenerationTratteriaConfigRule) {
-	s.generationRules.UpdateTratteriaConfigRule(pushedGenerationTokenRule)
 }

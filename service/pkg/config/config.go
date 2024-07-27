@@ -2,26 +2,20 @@ package config
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 )
 
 type AppConfig struct {
-	TconfigdUrl      url.URL
+	TconfigdHost     string
 	TconfigdSpiffeID spiffeid.ID
 	MyNamespace      string
 }
 
 func GetAppConfig() (*AppConfig, error) {
-	tconfigdUrl, err := url.Parse(getEnv("TCONFIGD_URL"))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing tconfigd url from environment variable: %w", err)
-	}
-
 	return &AppConfig{
-		TconfigdUrl:      *tconfigdUrl,
+		TconfigdHost:     getEnv("TCONFIGD_HOST"),
 		TconfigdSpiffeID: spiffeid.RequireFromString(getEnv("TCONFIGD_SPIFFE_ID")),
 		MyNamespace:      getEnv("MY_NAMESPACE"),
 	}, nil
