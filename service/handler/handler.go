@@ -3,11 +3,9 @@ package handler
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratteriaerrors"
 
@@ -29,22 +27,6 @@ func NewHandlers(service *service.Service, logger *zap.Logger) *Handlers {
 const (
 	GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange"
 )
-
-func (h *Handlers) GetJwksHandler(w http.ResponseWriter, r *http.Request) {
-	h.Logger.Info("Get-Jwks request received.")
-
-	jwks := h.Service.GetJwks()
-
-	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(jwks); err != nil {
-		h.Logger.Error("Failed to encode response of a get-jwks request.", zap.Error(err))
-
-		return
-	}
-
-	h.Logger.Info("Get-Jwks request processed successfully.")
-}
 
 func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) {
 	h.Logger.Info("Txn-Token request received.")
@@ -174,62 +156,6 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.Logger.Info("Txn-Token request processed successfully.")
-}
-
-func (h *Handlers) GenerationTraTRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		h.Logger.Error("Failed to read pushed generation trat rule request body", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	defer r.Body.Close()
-
-	var generationTraTRule v1alpha1.GenerationTraTRule
-
-	if err := json.Unmarshal(body, &generationTraTRule); err != nil {
-		h.Logger.Error("Failed to unmarshal pushed generation trat rule", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	h.Logger.Info("Received pushed generation trat rule",
-		zap.String("endpoint", generationTraTRule.Endpoint),
-		zap.Any("method", generationTraTRule.Method))
-
-	h.Service.AddGenerationTraTRule(generationTraTRule)
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (h *Handlers) GenerationTratteriaConfigRuleWebhookHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		h.Logger.Error("Failed to read pushed generation tratteria config rule request body", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	defer r.Body.Close()
-
-	var generationTratteriaConfigRule v1alpha1.GenerationTratteriaConfigRule
-
-	if err := json.Unmarshal(body, &generationTratteriaConfigRule); err != nil {
-		h.Logger.Error("Failed to unmarshal pushed generation tratteria config rule", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-
-		return
-	}
-
-	h.Logger.Info("Received pushed generation tratteria config rule")
-
-	h.Service.UpdateGenerationTokenRule(generationTratteriaConfigRule)
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handlers) GetGenerationRulesHandler(w http.ResponseWriter, r *http.Request) {

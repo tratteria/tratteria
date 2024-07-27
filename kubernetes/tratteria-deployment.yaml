@@ -29,8 +29,8 @@ spec:
           env:
             - name: TCONFIGD_SPIFFE_ID
               value: spiffe://[your-trust-domain]/tconfigd # Replace [your-trust-domain] with your Kubernetes namespace
-            - name: TCONFIGD_URL
-              value: https://tconfigd.tratteria-system.svc.cluster.local:8443
+            - name: TCONFIGD_HOST
+              value: tconfigd.tratteria-system.svc.cluster.local:8443
             - name: SPIFFE_ENDPOINT_SOCKET
               value: unix:///run/spire/sockets/agent.sock
             - name: MY_NAMESPACE

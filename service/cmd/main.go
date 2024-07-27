@@ -72,14 +72,13 @@ func main() {
 	httpClient := &http.Client{}
 	generationRules := v1alpha1.NewGenerationRulesImp(httpClient, logger)
 
-	configSyncClient, err := configsync.NewClient(HTTPS_PORT, appConfig.TconfigdUrl, appConfig.TconfigdSpiffeID, appConfig.MyNamespace, generationRules, x509Source, logger)
-	if err != nil {
-		logger.Fatal("Error creating configuration sync client for tconfigd", zap.Error(err))
-	}
+	configSyncClient := configsync.NewClient(appConfig.TconfigdHost, appConfig.TconfigdSpiffeID, appConfig.MyNamespace, generationRules, x509Source, logger)
 
-	if err := configSyncClient.Start(); err != nil {
-		logger.Fatal("Error establishing communication with tconfigd", zap.Error(err))
-	}
+	go func() {
+		if err := configSyncClient.Start(ctx); err != nil {
+			logger.Fatal("Config sync client stopped with error", zap.Error(err))
+		}
+	}()
 
 	appService := service.NewService(generationRules, logger)
 	appHandler := handler.NewHandlers(appService, logger)
@@ -138,10 +137,7 @@ func startHTTPServer(handlers *handler.Handlers, logger *zap.Logger) error {
 func startHTTPSServer(handlers *handler.Handlers, x509Source *workloadapi.X509Source, tconfigdSpiffeID func() ([]spiffeid.ID, error), traTGenAuthorizedSpiffeIDs func() ([]spiffeid.ID, error), logger *zap.Logger) error {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/jwks.json", handlers.GetJwksHandler).Methods("GET")
 	router.Handle("/token_endpoint", middlewares.AuthorizeSpiffeID(traTGenAuthorizedSpiffeIDs)(http.HandlerFunc(handlers.TokenEndpointHandler))).Methods("POST")
-	router.Handle("/generation-trat-rule-webhook", middlewares.AuthorizeSpiffeID(tconfigdSpiffeID)(http.HandlerFunc(handlers.GenerationTraTRuleWebhookHandler))).Methods("POST")
-	router.Handle("/generation-tratteria-config-rule-webhook", middlewares.AuthorizeSpiffeID(tconfigdSpiffeID)(http.HandlerFunc(handlers.GenerationTratteriaConfigRuleWebhookHandler))).Methods("POST")
 
 	srv := &http.Server{
 		Handler:      router,

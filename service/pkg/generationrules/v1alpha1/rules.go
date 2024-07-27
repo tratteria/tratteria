@@ -26,14 +26,14 @@ type TratteriaConfigToken struct {
 	LifeTime string `json:"lifeTime"`
 }
 
-type GenerationTratteriaConfigRule struct {
+type TratteriaConfigGenerationRule struct {
 	Token                               TratteriaConfigToken                  `json:"token"`
 	SubjectTokens                       *subjecttokenhandler.SubjectTokens    `json:"subjectTokens"`
 	AccessEvaluationAPI                 *accessevaluation.AccessEvaluationAPI `json:"accessEvaluationAPI"`
 	TokenGenerationAuthorizedServiceIds []string                              `json:"tokenGenerationAuthorizedServiceIds"`
 }
 
-type GenerationTraTRule struct {
+type TraTGenerationRule struct {
 	Endpoint   string            `json:"endpoint"`
 	Method     common.HttpMethod `json:"method"`
 	Purp       string            `json:"purp"`
@@ -45,18 +45,18 @@ type AzdField struct {
 	Value string `json:"value"`
 }
 
-type GenerationTraTRules map[common.HttpMethod]map[string]GenerationTraTRule
+type TraTGenerationRules map[common.HttpMethod]map[string]TraTGenerationRule
 
 type GenerationRules struct {
-	TratteriaConfigRules *GenerationTratteriaConfigRule `json:"tratteriaConfigRules"`
-	TraTRules            GenerationTraTRules            `json:"traTRules"`
+	TratteriaConfigRules *TratteriaConfigGenerationRule `json:"tratteriaConfigRules"`
+	TraTRules            TraTGenerationRules            `json:"traTRules"`
 }
 
 func NewGenerationRules() *GenerationRules {
-	traTRules := make(GenerationTraTRules)
+	traTRules := make(TraTGenerationRules)
 
 	for _, method := range common.HttpMethodList {
-		traTRules[method] = make(map[string]GenerationTraTRule)
+		traTRules[method] = make(map[string]TraTGenerationRule)
 	}
 
 	return &GenerationRules{
@@ -81,7 +81,7 @@ func NewGenerationRulesImp(httpClient *http.Client, logger *zap.Logger) *Generat
 	}
 }
 
-func (gri *GenerationRulesImp) AddTraTRule(generationTraTRule GenerationTraTRule) error {
+func (gri *GenerationRulesImp) AddTraTRule(generationTraTRule TraTGenerationRule) error {
 	gri.mu.Lock()
 	defer gri.mu.Unlock()
 
@@ -94,7 +94,7 @@ func (gri *GenerationRulesImp) AddTraTRule(generationTraTRule GenerationTraTRule
 	return nil
 }
 
-func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConfigRule GenerationTratteriaConfigRule) {
+func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConfigRule TratteriaConfigGenerationRule) {
 	gri.mu.Lock()
 	defer gri.mu.Unlock()
 
@@ -116,10 +116,10 @@ func (gri *GenerationRulesImp) GetRulesJSON() (json.RawMessage, error) {
 }
 
 // Read lock should be take by the function calling matchRule.
-func (gri *GenerationRulesImp) matchRule(path string, method common.HttpMethod) (GenerationTraTRule, map[string]string, error) {
+func (gri *GenerationRulesImp) matchRule(path string, method common.HttpMethod) (TraTGenerationRule, map[string]string, error) {
 	methodRuleMap, ok := gri.rules.TraTRules[method]
 	if !ok {
-		return GenerationTraTRule{}, nil, fmt.Errorf("invalid HTTP method: %s", string(method))
+		return TraTGenerationRule{}, nil, fmt.Errorf("invalid HTTP method: %s", string(method))
 	}
 
 	for pattern, rule := range methodRuleMap {
@@ -142,7 +142,7 @@ func (gri *GenerationRulesImp) matchRule(path string, method common.HttpMethod) 
 		}
 	}
 
-	return GenerationTraTRule{}, nil, errors.New("no matching rule found")
+	return TraTGenerationRule{}, nil, errors.New("no matching rule found")
 }
 
 func convertToRegex(template string) string {
@@ -295,33 +295,31 @@ func (gri *GenerationRulesImp) GetTraTGenerationAuthorizedServicesSpifeeIDs() ([
 	return spiffeIDs, nil
 }
 
-type GenerationRulesTconfigd struct {
-	GenerationTratteriaConfigRule *GenerationTratteriaConfigRule `json:"generationTratteriaConfigRule"`
-	GenerationTratRules           []*GenerationTraTRule          `json:"generationTratRules"`
+type TconfigdGenerationRules struct {
+	TratteriaConfigGenerationRule *TratteriaConfigGenerationRule `json:"tratteriaConfigGenerationRule"`
+	TratGenerationRules           []*TraTGenerationRule          `json:"tratGenerationRules"`
 }
 
-func (gri *GenerationRulesImp) UpdateCompleteRules(generationRulesTconfigd GenerationRulesTconfigd) error {
+func (gri *GenerationRulesImp) UpdateCompleteRules(tconfigdGenerationRules *TconfigdGenerationRules) {
 	gri.mu.Lock()
 	defer gri.mu.Unlock()
 
-	gri.rules.TratteriaConfigRules = generationRulesTconfigd.GenerationTratteriaConfigRule
+	gri.rules.TratteriaConfigRules = tconfigdGenerationRules.TratteriaConfigGenerationRule
 
 	if gri.rules.TratteriaConfigRules != nil {
 		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.rules.TratteriaConfigRules.SubjectTokens, gri.logger)
 		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.rules.TratteriaConfigRules.AccessEvaluationAPI, gri.httpClient)
 	}
 
-	traTRules := make(GenerationTraTRules)
+	traTRules := make(TraTGenerationRules)
 
 	for _, method := range common.HttpMethodList {
-		traTRules[method] = make(map[string]GenerationTraTRule)
+		traTRules[method] = make(map[string]TraTGenerationRule)
 	}
 
-	for _, endpointRule := range generationRulesTconfigd.GenerationTratRules {
+	for _, endpointRule := range tconfigdGenerationRules.TratGenerationRules {
 		traTRules[endpointRule.Method][endpointRule.Endpoint] = *endpointRule
 	}
 
 	gri.rules.TraTRules = traTRules
-
-	return nil
 }
