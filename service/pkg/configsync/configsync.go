@@ -26,6 +26,7 @@ const (
 	CONNECTION_MAX_RETRIES     = 5
 	WRITE_WAIT                 = 10 * time.Second
 	PONG_WAIT                  = 60 * time.Second
+	PING_PERIOD                = (PONG_WAIT * 9) / 10
 	REQUEST_TIMEOUT            = 15 * time.Second
 )
 
@@ -52,8 +53,14 @@ const (
 	MessageTypeTraTGenerationRuleUpsertResponse            MessageType = "TRAT_GENERATION_RULE_UPSERT_RESPONSE"
 	MessageTypeTratteriaConfigGenerationRuleUpsertRequest  MessageType = "TRATTERIA_CONFIG_GENERATION_RULE_UPSERT_REQUEST"
 	MessageTypeTratteriaConfigGenerationRuleUpsertResponse MessageType = "TRATTERIA_CONFIG_GENERATION_RULE_UPSERT_RESPONSE"
+	MessageTypeRuleReconciliationRequest                   MessageType = "RULE_RECONCILIATION_REQUEST"
+	MessageTypeRuleReconciliationResponse                  MessageType = "RULE_RECONCILIATION_RESPONSE"
 	MessageTypeUnknown                                     MessageType = "UNKNOWN"
 )
+
+type PingData struct {
+	RuleHash string `json:"ruleHash"`
+}
 
 type Request struct {
 	ID      string          `json:"id"`
@@ -72,7 +79,7 @@ type RegistrationRequest struct {
 	Namespace string `json:"namespace"`
 }
 
-type InitialGenerationRulesResponsePayload struct {
+type AllActiveGenerationRules struct {
 	GenerationRules *v1alpha1.TconfigdGenerationRules `json:"generationRules"`
 }
 
@@ -210,7 +217,7 @@ func (c *Client) connect(ctx context.Context) error {
 		return fmt.Errorf("received unexpected status code for initial rules response: %v", initialRuleResponse.Status)
 	}
 
-	var initialGenerationRulesResponsePayload InitialGenerationRulesResponsePayload
+	var initialGenerationRulesResponsePayload AllActiveGenerationRules
 
 	err = json.Unmarshal(initialRuleResponse.Payload, &initialGenerationRulesResponsePayload)
 	if err != nil {
@@ -242,10 +249,10 @@ func (c *Client) readPump() {
 	}()
 
 	c.conn.SetReadDeadline(time.Now().Add(PONG_WAIT))
-	c.conn.SetPingHandler(func(appData string) error {
+	c.conn.SetPongHandler(func(string) error {
 		c.conn.SetReadDeadline(time.Now().Add(PONG_WAIT))
 
-		return c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(WRITE_WAIT))
+		return nil
 	})
 
 	for {
@@ -268,7 +275,10 @@ func (c *Client) readPump() {
 }
 
 func (c *Client) writePump() {
+	ticker := time.NewTicker(PING_PERIOD)
+
 	defer func() {
+		ticker.Stop()
 		c.close()
 	}()
 
@@ -283,6 +293,30 @@ func (c *Client) writePump() {
 
 			if err := c.writeMessage(websocket.TextMessage, message); err != nil {
 				c.logger.Error("Failed to write message.", zap.Error(err))
+
+				return
+			}
+		case <-ticker.C:
+			generationHash, err := c.generationRules.GetGenerationRulesHash()
+			if err != nil {
+				c.logger.Error("Error getting generation rule hash.", zap.Error(err))
+
+				return
+			}
+
+			pingData := PingData{
+				RuleHash: generationHash,
+			}
+
+			pingPayload, err := json.Marshal(pingData)
+			if err != nil {
+				c.logger.Error("Failed to marshal ping data", zap.Error(err))
+
+				return
+			}
+
+			if err := c.writeMessage(websocket.PingMessage, pingPayload); err != nil {
+				c.logger.Error("Failed to write ping message.", zap.Error(err))
 
 				return
 			}
@@ -308,7 +342,10 @@ func (c *Client) handleMessage(message []byte) {
 	}
 
 	switch temp.Type {
-	case MessageTypeTraTGenerationRuleUpsertRequest, MessageTypeTratteriaConfigGenerationRuleUpsertRequest, MessageTypeGetJWKSRequest:
+	case MessageTypeTraTGenerationRuleUpsertRequest,
+		MessageTypeTratteriaConfigGenerationRuleUpsertRequest,
+		MessageTypeGetJWKSRequest,
+		MessageTypeRuleReconciliationRequest:
 		c.handleRequest(message)
 	default:
 		c.logger.Error("Received unknown or unexpected message type.", zap.String("type", string(temp.Type)))
@@ -330,8 +367,17 @@ func (c *Client) handleRequest(message []byte) {
 		c.handleRuleUpsertRequest(request)
 	case MessageTypeGetJWKSRequest:
 		c.handleGetJWKSRequest(request)
+	case MessageTypeRuleReconciliationRequest:
+		c.handleRuleReconciliationRequest(request)
 	default:
 		c.logger.Error("Received unknown or unexpected request type", zap.String("type", string(request.Type)))
+
+		c.sendErrorResponse(
+			request.ID,
+			MessageTypeUnknown,
+			http.StatusBadRequest,
+			"received unknown or unexpected request type",
+		)
 	}
 }
 
@@ -406,8 +452,6 @@ func (c *Client) handleRuleUpsertRequest(request Request) {
 			http.StatusBadRequest,
 			"received unknown or unexpected rule upsert request",
 		)
-
-		return
 	}
 }
 
@@ -417,6 +461,31 @@ func (c *Client) handleGetJWKSRequest(request Request) {
 	err := c.sendResponse(request.ID, MessageTypeGetJWKSResponse, http.StatusOK, jwks)
 	if err != nil {
 		c.logger.Error("Error sending JWKS", zap.Error(err))
+	}
+}
+
+func (c *Client) handleRuleReconciliationRequest(request Request) {
+	c.logger.Info("Received generation rules reconciliation request")
+
+	var allActiveGenerationRules AllActiveGenerationRules
+
+	if err := json.Unmarshal(request.Payload, &allActiveGenerationRules); err != nil {
+		c.logger.Error("Error parsing generation rule reconciliation request", zap.Error(err))
+		c.sendErrorResponse(
+			request.ID,
+			MessageTypeRuleReconciliationResponse,
+			http.StatusBadRequest,
+			"error parsing generation rule reconciliation request",
+		)
+
+		return
+	}
+
+	c.generationRules.UpdateCompleteRules(allActiveGenerationRules.GenerationRules)
+
+	err := c.sendResponse(request.ID, MessageTypeRuleReconciliationResponse, http.StatusOK, nil)
+	if err != nil {
+		c.logger.Error("Error sending generation rule reconciliation request response", zap.Error(err))
 	}
 }
 

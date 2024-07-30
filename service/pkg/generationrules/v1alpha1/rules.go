@@ -1,15 +1,19 @@
 package v1alpha1
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/utils"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"go.uber.org/zap"
 
@@ -42,7 +46,8 @@ type TraTGenerationRule struct {
 
 type AzdMapping map[string]AzdField
 type AzdField struct {
-	Value string `json:"value"`
+	Required bool   `json:"required"`
+	Value    string `json:"value"`
 }
 
 type TraTGenerationRules map[common.HttpMethod]map[string]TraTGenerationRule
@@ -297,7 +302,7 @@ func (gri *GenerationRulesImp) GetTraTGenerationAuthorizedServicesSpifeeIDs() ([
 
 type TconfigdGenerationRules struct {
 	TratteriaConfigGenerationRule *TratteriaConfigGenerationRule `json:"tratteriaConfigGenerationRule"`
-	TratGenerationRules           []*TraTGenerationRule          `json:"tratGenerationRules"`
+	TratGenerationRules           []*TraTGenerationRule          `json:"traTGenerationRules"`
 }
 
 func (gri *GenerationRulesImp) UpdateCompleteRules(tconfigdGenerationRules *TconfigdGenerationRules) {
@@ -322,4 +327,91 @@ func (gri *GenerationRulesImp) UpdateCompleteRules(tconfigdGenerationRules *Tcon
 	}
 
 	gri.rules.TraTRules = traTRules
+}
+
+func (tconfigdGenerationRules *TconfigdGenerationRules) ComputeStableHash() (string, error) {
+	var sortErr error
+
+	sort.SliceStable(tconfigdGenerationRules.TratGenerationRules, func(i, j int) bool {
+		if sortErr != nil {
+			return false
+		}
+
+		iJSON, err := json.Marshal(tconfigdGenerationRules.TratGenerationRules[i])
+		if err != nil {
+			sortErr = fmt.Errorf("failed to marshal rule %d: %w", i, err)
+
+			return false
+		}
+
+		jJSON, err := json.Marshal(tconfigdGenerationRules.TratGenerationRules[j])
+		if err != nil {
+			sortErr = fmt.Errorf("failed to marshal rule %d: %w", j, err)
+
+			return false
+		}
+
+		iStr, err := utils.CanonicalizeJSON(json.RawMessage(iJSON))
+		if err != nil {
+			sortErr = fmt.Errorf("failed to canonicalize rule %d: %w", i, err)
+
+			return false
+		}
+
+		jStr, err := utils.CanonicalizeJSON(json.RawMessage(jJSON))
+		if err != nil {
+			sortErr = fmt.Errorf("failed to canonicalize rule %d: %w", j, err)
+
+			return false
+		}
+
+		return iStr < jStr
+	})
+
+	if sortErr != nil {
+		return "", fmt.Errorf("error during sorting: %w", sortErr)
+	}
+
+	data, err := json.Marshal(tconfigdGenerationRules)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal rules: %w", err)
+	}
+
+	var jsonData interface{}
+
+	err = json.Unmarshal(data, &jsonData)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal for canonicalization: %w", err)
+	}
+
+	canonicalizedData, err := utils.CanonicalizeJSON(jsonData)
+	if err != nil {
+		return "", fmt.Errorf("failed to canonicalize JSON: %w", err)
+	}
+
+	hash := sha256.Sum256([]byte(canonicalizedData))
+
+	return hex.EncodeToString(hash[:]), nil
+}
+
+func (gri *GenerationRulesImp) GetGenerationRulesHash() (string, error) {
+	gri.mu.RLock()
+	defer gri.mu.RUnlock()
+
+	var tconfigdGenerationRules TconfigdGenerationRules
+
+	tconfigdGenerationRules.TratteriaConfigGenerationRule = gri.rules.TratteriaConfigRules
+
+	var traTGenerationRules []*TraTGenerationRule
+
+	for _, methodRules := range gri.rules.TraTRules {
+		for _, endpointRule := range methodRules {
+			ruleCopy := endpointRule
+			traTGenerationRules = append(traTGenerationRules, &ruleCopy)
+		}
+	}
+
+	tconfigdGenerationRules.TratGenerationRules = traTGenerationRules
+
+	return tconfigdGenerationRules.ComputeStableHash()
 }
