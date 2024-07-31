@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,6 +20,7 @@ import (
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/configsync"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/logging"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middlewares"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
 )
@@ -37,16 +37,12 @@ func main() {
 
 	setupSignalHandler(cancel)
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		log.Fatalf("Cannot initialize Zap logger: %v.", err)
+	if err := logging.InitLogger(); err != nil {
+		panic(err)
 	}
+	defer logging.Sync()
 
-	defer func() {
-		if err := logger.Sync(); err != nil {
-			log.Printf("Error syncing logger: %v", err)
-		}
-	}()
+	mainLogger := logging.GetLogger("main")
 
 	x509SrcCtx, cancel := context.WithTimeout(context.Background(), SPIRE_SOURCE_TIMEOUT)
 
@@ -54,39 +50,40 @@ func main() {
 
 	x509Source, err := workloadapi.NewX509Source(x509SrcCtx)
 	if err != nil {
-		logger.Fatal("Failed to create SPIRE X.509 source", zap.Error(err))
+		mainLogger.Fatal("Failed to create SPIRE X.509 source", zap.Error(err))
 	}
 
 	defer x509Source.Close()
 
 	appConfig, err := config.GetAppConfig()
 	if err != nil {
-		logger.Fatal("Error getting application configuration.", zap.Error(err))
+		mainLogger.Fatal("Error getting application configuration.", zap.Error(err))
 	}
 
 	err = keys.Initialize()
 	if err != nil {
-		logger.Fatal("Error initializing keys:", zap.Error(err))
+		mainLogger.Fatal("Error initializing keys:", zap.Error(err))
 	}
 
 	httpClient := &http.Client{}
-	generationRules := v1alpha1.NewGenerationRulesImp(httpClient, logger)
+	generationRules := v1alpha1.NewGenerationRulesImp(httpClient)
 
-	configSyncClient := configsync.NewClient(appConfig.TconfigdHost, appConfig.TconfigdSpiffeID, appConfig.MyNamespace, generationRules, x509Source, logger)
+	configSyncClient := configsync.NewClient(appConfig.TconfigdHost, appConfig.TconfigdSpiffeID, appConfig.MyNamespace, generationRules, x509Source, logging.GetLogger("config-sync"))
 
 	go func() {
 		if err := configSyncClient.Start(ctx); err != nil {
-			logger.Fatal("Config sync client stopped with error", zap.Error(err))
+			mainLogger.Fatal("Config sync client stopped with error", zap.Error(err))
 		}
 	}()
 
-	appService := service.NewService(generationRules, logger)
-	appHandler := handler.NewHandlers(appService, logger)
+	apiLogger := logging.GetLogger("api-server")
+	apiService := service.NewService(generationRules, apiLogger)
+	apiHandler := handler.NewHandlers(apiService, apiLogger)
 
 	go func() {
-		err := startHTTPServer(appHandler, logger)
+		err := startHTTPServer(apiHandler, mainLogger)
 		if err != nil {
-			logger.Fatal("HTTP server exited with error", zap.Error(err))
+			mainLogger.Fatal("HTTP server exited with error", zap.Error(err))
 		}
 	}()
 
@@ -94,18 +91,18 @@ func main() {
 
 	go func() {
 		if err := startHTTPSServer(
-			appHandler,
+			apiHandler,
 			x509Source,
 			traTGenAuthorizedSpiffeIDs,
-			logger,
+			mainLogger,
 		); err != nil {
-			logger.Fatal("HTTPS server exited with error", zap.Error(err))
+			mainLogger.Fatal("HTTPS server exited with error", zap.Error(err))
 		}
 	}()
 
 	<-ctx.Done()
 
-	logger.Info("Shutting down tratteria...")
+	mainLogger.Info("Shutting down tratteria...")
 }
 
 func startHTTPServer(handlers *handler.Handlers, logger *zap.Logger) error {
