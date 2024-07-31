@@ -12,10 +12,10 @@ import (
 
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
+	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/logging"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
 	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/utils"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
-	"go.uber.org/zap"
 
 	"errors"
 	"regexp"
@@ -74,15 +74,13 @@ type GenerationRulesImp struct {
 	subjectTokenHandlers *subjecttokenhandler.TokenHandlers
 	accessevaluator      *accessevaluation.AccessEvaluator
 	httpClient           *http.Client
-	logger               *zap.Logger
 	mu                   sync.RWMutex
 }
 
-func NewGenerationRulesImp(httpClient *http.Client, logger *zap.Logger) *GenerationRulesImp {
+func NewGenerationRulesImp(httpClient *http.Client) *GenerationRulesImp {
 	return &GenerationRulesImp{
 		rules:      NewGenerationRules(),
 		httpClient: httpClient,
-		logger:     logger,
 	}
 }
 
@@ -104,7 +102,7 @@ func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConf
 	defer gri.mu.Unlock()
 
 	gri.rules.TratteriaConfigRules = &generationTratteriaConfigRule
-	gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(generationTratteriaConfigRule.SubjectTokens, gri.logger)
+	gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(generationTratteriaConfigRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
 	gri.accessevaluator = accessevaluation.NewAccessEvaluator(generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient)
 }
 
@@ -312,7 +310,7 @@ func (gri *GenerationRulesImp) UpdateCompleteRules(tconfigdGenerationRules *Tcon
 	gri.rules.TratteriaConfigRules = tconfigdGenerationRules.TratteriaConfigGenerationRule
 
 	if gri.rules.TratteriaConfigRules != nil {
-		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.rules.TratteriaConfigRules.SubjectTokens, gri.logger)
+		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.rules.TratteriaConfigRules.SubjectTokens, logging.GetLogger("subject-token-handler"))
 		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.rules.TratteriaConfigRules.AccessEvaluationAPI, gri.httpClient)
 	}
 
