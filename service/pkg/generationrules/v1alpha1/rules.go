@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"sync"
 	"time"
 
@@ -31,13 +30,14 @@ type TratteriaConfigToken struct {
 }
 
 type TratteriaConfigGenerationRule struct {
-	Token                               TratteriaConfigToken                  `json:"token"`
+	Token                               *TratteriaConfigToken                 `json:"token"`
 	SubjectTokens                       *subjecttokenhandler.SubjectTokens    `json:"subjectTokens"`
 	AccessEvaluationAPI                 *accessevaluation.AccessEvaluationAPI `json:"accessEvaluationAPI"`
 	TokenGenerationAuthorizedServiceIds []string                              `json:"tokenGenerationAuthorizedServiceIds"`
 }
 
 type TraTGenerationRule struct {
+	TraTName   string            `json:"traTName"`
 	Endpoint   string            `json:"endpoint"`
 	Method     common.HttpMethod `json:"method"`
 	Purp       string            `json:"purp"`
@@ -50,49 +50,69 @@ type AzdField struct {
 	Value    string `json:"value"`
 }
 
-type TraTGenerationRules map[common.HttpMethod]map[string]TraTGenerationRule
+type IndexedTraTsGenerationRules map[common.HttpMethod]map[string]*TraTGenerationRule
 
 type GenerationRules struct {
-	TratteriaConfigRules *TratteriaConfigGenerationRule `json:"tratteriaConfigRules"`
-	TraTRules            TraTGenerationRules            `json:"traTRules"`
+	TratteriaConfigGenerationRule *TratteriaConfigGenerationRule `json:"tratteriaConfigGenerationRule"`
+	TraTsGenerationRules          map[string]*TraTGenerationRule `json:"traTsGenerationRules"`
 }
 
 func NewGenerationRules() *GenerationRules {
-	traTRules := make(TraTGenerationRules)
-
-	for _, method := range common.HttpMethodList {
-		traTRules[method] = make(map[string]TraTGenerationRule)
-	}
-
 	return &GenerationRules{
-		TraTRules: traTRules,
+		TratteriaConfigGenerationRule: &TratteriaConfigGenerationRule{},
+		TraTsGenerationRules:          make(map[string]*TraTGenerationRule),
 	}
 }
 
 type GenerationRulesImp struct {
-	rules                *GenerationRules
-	subjectTokenHandlers *subjecttokenhandler.TokenHandlers
-	accessevaluator      *accessevaluation.AccessEvaluator
-	httpClient           *http.Client
-	mu                   sync.RWMutex
+	generationRules             *GenerationRules
+	indexedTraTsGenerationRules IndexedTraTsGenerationRules
+	subjectTokenHandlers        *subjecttokenhandler.TokenHandlers
+	accessevaluator             *accessevaluation.AccessEvaluator
+	httpClient                  *http.Client
+	mu                          sync.RWMutex
 }
 
 func NewGenerationRulesImp(httpClient *http.Client) *GenerationRulesImp {
+	indexedTraTsGenerationRules := make(IndexedTraTsGenerationRules)
+
+	for _, method := range common.HttpMethodList {
+		indexedTraTsGenerationRules[method] = make(map[string]*TraTGenerationRule)
+	}
+
 	return &GenerationRulesImp{
-		rules:      NewGenerationRules(),
-		httpClient: httpClient,
+		generationRules:             NewGenerationRules(),
+		indexedTraTsGenerationRules: indexedTraTsGenerationRules,
+		httpClient:                  httpClient,
 	}
 }
 
-func (gri *GenerationRulesImp) AddTraTRule(generationTraTRule TraTGenerationRule) error {
+// write lock should be taken my method calling indexTraTsGenerationRules.
+func (gri *GenerationRulesImp) indexTraTsGenerationRules() {
+	indexedTraTsGenerationRules := make(IndexedTraTsGenerationRules)
+
+	for _, method := range common.HttpMethodList {
+		indexedTraTsGenerationRules[method] = make(map[string]*TraTGenerationRule)
+	}
+
+	for _, traTGenerationRules := range gri.generationRules.TraTsGenerationRules {
+		indexedTraTsGenerationRules[traTGenerationRules.Method][traTGenerationRules.Endpoint] = traTGenerationRules
+	}
+
+	gri.indexedTraTsGenerationRules = indexedTraTsGenerationRules
+}
+
+func (gri *GenerationRulesImp) UpsertTraTRule(traTGenerationRule TraTGenerationRule) error {
 	gri.mu.Lock()
 	defer gri.mu.Unlock()
 
-	if _, exist := gri.rules.TraTRules[generationTraTRule.Method]; !exist {
-		return fmt.Errorf("invalid HTTP method: %s", string(generationTraTRule.Method))
+	if _, exist := gri.indexedTraTsGenerationRules[traTGenerationRule.Method]; !exist {
+		return fmt.Errorf("invalid HTTP method: %s", string(traTGenerationRule.Method))
 	}
 
-	gri.rules.TraTRules[generationTraTRule.Method][generationTraTRule.Endpoint] = generationTraTRule
+	gri.generationRules.TraTsGenerationRules[traTGenerationRule.TraTName] = &traTGenerationRule
+
+	gri.indexTraTsGenerationRules()
 
 	return nil
 }
@@ -101,16 +121,26 @@ func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConf
 	gri.mu.Lock()
 	defer gri.mu.Unlock()
 
-	gri.rules.TratteriaConfigRules = &generationTratteriaConfigRule
-	gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(generationTratteriaConfigRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
-	gri.accessevaluator = accessevaluation.NewAccessEvaluator(generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient)
+	gri.generationRules.TratteriaConfigGenerationRule = &generationTratteriaConfigRule
+
+	if generationTratteriaConfigRule.SubjectTokens == nil {
+		gri.subjectTokenHandlers = nil
+	} else {
+		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(generationTratteriaConfigRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
+	}
+
+	if generationTratteriaConfigRule.AccessEvaluationAPI == nil {
+		gri.accessevaluator = nil
+	} else {
+		gri.accessevaluator = accessevaluation.NewAccessEvaluator(generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient)
+	}
 }
 
 func (gri *GenerationRulesImp) GetRulesJSON() (json.RawMessage, error) {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	jsonData, err := json.Marshal(gri.rules)
+	jsonData, err := json.Marshal(gri.generationRules)
 	if err != nil {
 		return nil, err
 	}
@@ -119,10 +149,10 @@ func (gri *GenerationRulesImp) GetRulesJSON() (json.RawMessage, error) {
 }
 
 // Read lock should be take by the function calling matchRule.
-func (gri *GenerationRulesImp) matchRule(path string, method common.HttpMethod) (TraTGenerationRule, map[string]string, error) {
-	methodRuleMap, ok := gri.rules.TraTRules[method]
+func (gri *GenerationRulesImp) matchRule(path string, method common.HttpMethod) (*TraTGenerationRule, map[string]string, error) {
+	methodRuleMap, ok := gri.indexedTraTsGenerationRules[method]
 	if !ok {
-		return TraTGenerationRule{}, nil, fmt.Errorf("invalid HTTP method: %s", string(method))
+		return nil, nil, fmt.Errorf("invalid HTTP method: %s", string(method))
 	}
 
 	for pattern, rule := range methodRuleMap {
@@ -145,7 +175,7 @@ func (gri *GenerationRulesImp) matchRule(path string, method common.HttpMethod) 
 		}
 	}
 
-	return TraTGenerationRule{}, nil, errors.New("no matching rule found")
+	return nil, nil, errors.New("no matching rule found")
 }
 
 func convertToRegex(template string) string {
@@ -239,21 +269,21 @@ func (gri *GenerationRulesImp) GetIssuer() string {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	return gri.rules.TratteriaConfigRules.Token.Issuer
+	return gri.generationRules.TratteriaConfigGenerationRule.Token.Issuer
 }
 
 func (gri *GenerationRulesImp) GetAudience() string {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	return gri.rules.TratteriaConfigRules.Token.Audience
+	return gri.generationRules.TratteriaConfigGenerationRule.Token.Audience
 }
 
 func (gri *GenerationRulesImp) GetTokenLifetime() (time.Duration, error) {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	duration, err := time.ParseDuration(gri.rules.TratteriaConfigRules.Token.LifeTime)
+	duration, err := time.ParseDuration(gri.generationRules.TratteriaConfigGenerationRule.Token.LifeTime)
 	if err != nil {
 		return 0, fmt.Errorf("error parsing token lifetime: %v", err)
 	}
@@ -278,12 +308,12 @@ func (gri *GenerationRulesImp) GetSubjectTokenHandler(tokenType common.TokenType
 	return gri.subjectTokenHandlers.GetHandler(tokenType)
 }
 
-func (gri *GenerationRulesImp) GetTraTGenerationAuthorizedServicesSpifeeIDs() ([]spiffeid.ID, error) {
-	if gri.rules.TratteriaConfigRules == nil {
+func (gri *GenerationRulesImp) GetTokenGenerationAuthorizedServiceIds() ([]spiffeid.ID, error) {
+	if gri.generationRules.TratteriaConfigGenerationRule == nil {
 		return []spiffeid.ID{}, nil
 	}
 
-	stringIDs := gri.rules.TratteriaConfigRules.TokenGenerationAuthorizedServiceIds
+	stringIDs := gri.generationRules.TratteriaConfigGenerationRule.TokenGenerationAuthorizedServiceIds
 	spiffeIDs := make([]spiffeid.ID, 0, len(stringIDs))
 
 	for _, idStr := range stringIDs {
@@ -298,79 +328,22 @@ func (gri *GenerationRulesImp) GetTraTGenerationAuthorizedServicesSpifeeIDs() ([
 	return spiffeIDs, nil
 }
 
-type TconfigdGenerationRules struct {
-	TratteriaConfigGenerationRule *TratteriaConfigGenerationRule `json:"tratteriaConfigGenerationRule"`
-	TratGenerationRules           []*TraTGenerationRule          `json:"traTGenerationRules"`
-}
-
-func (gri *GenerationRulesImp) UpdateCompleteRules(tconfigdGenerationRules *TconfigdGenerationRules) {
+func (gri *GenerationRulesImp) UpdateCompleteRules(generationRules *GenerationRules) {
 	gri.mu.Lock()
 	defer gri.mu.Unlock()
 
-	gri.rules.TratteriaConfigRules = tconfigdGenerationRules.TratteriaConfigGenerationRule
+	gri.generationRules = generationRules
 
-	if gri.rules.TratteriaConfigRules != nil {
-		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.rules.TratteriaConfigRules.SubjectTokens, logging.GetLogger("subject-token-handler"))
-		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.rules.TratteriaConfigRules.AccessEvaluationAPI, gri.httpClient)
+	if gri.generationRules.TratteriaConfigGenerationRule != nil {
+		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
+		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI, gri.httpClient)
 	}
 
-	traTRules := make(TraTGenerationRules)
-
-	for _, method := range common.HttpMethodList {
-		traTRules[method] = make(map[string]TraTGenerationRule)
-	}
-
-	for _, endpointRule := range tconfigdGenerationRules.TratGenerationRules {
-		traTRules[endpointRule.Method][endpointRule.Endpoint] = *endpointRule
-	}
-
-	gri.rules.TraTRules = traTRules
+	gri.indexTraTsGenerationRules()
 }
 
-func (tconfigdGenerationRules *TconfigdGenerationRules) ComputeStableHash() (string, error) {
-	var sortErr error
-
-	sort.SliceStable(tconfigdGenerationRules.TratGenerationRules, func(i, j int) bool {
-		if sortErr != nil {
-			return false
-		}
-
-		iJSON, err := json.Marshal(tconfigdGenerationRules.TratGenerationRules[i])
-		if err != nil {
-			sortErr = fmt.Errorf("failed to marshal rule %d: %w", i, err)
-
-			return false
-		}
-
-		jJSON, err := json.Marshal(tconfigdGenerationRules.TratGenerationRules[j])
-		if err != nil {
-			sortErr = fmt.Errorf("failed to marshal rule %d: %w", j, err)
-
-			return false
-		}
-
-		iStr, err := utils.CanonicalizeJSON(json.RawMessage(iJSON))
-		if err != nil {
-			sortErr = fmt.Errorf("failed to canonicalize rule %d: %w", i, err)
-
-			return false
-		}
-
-		jStr, err := utils.CanonicalizeJSON(json.RawMessage(jJSON))
-		if err != nil {
-			sortErr = fmt.Errorf("failed to canonicalize rule %d: %w", j, err)
-
-			return false
-		}
-
-		return iStr < jStr
-	})
-
-	if sortErr != nil {
-		return "", fmt.Errorf("error during sorting: %w", sortErr)
-	}
-
-	data, err := json.Marshal(tconfigdGenerationRules)
+func (generationRules *GenerationRules) ComputeStableHash() (string, error) {
+	data, err := json.Marshal(generationRules)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal rules: %w", err)
 	}
@@ -396,20 +369,5 @@ func (gri *GenerationRulesImp) GetGenerationRulesHash() (string, error) {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	var tconfigdGenerationRules TconfigdGenerationRules
-
-	tconfigdGenerationRules.TratteriaConfigGenerationRule = gri.rules.TratteriaConfigRules
-
-	var traTGenerationRules []*TraTGenerationRule
-
-	for _, methodRules := range gri.rules.TraTRules {
-		for _, endpointRule := range methodRules {
-			ruleCopy := endpointRule
-			traTGenerationRules = append(traTGenerationRules, &ruleCopy)
-		}
-	}
-
-	tconfigdGenerationRules.TratGenerationRules = traTGenerationRules
-
-	return tconfigdGenerationRules.ComputeStableHash()
+	return gri.generationRules.ComputeStableHash()
 }
