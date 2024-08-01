@@ -80,7 +80,7 @@ type RegistrationRequest struct {
 }
 
 type AllActiveGenerationRules struct {
-	GenerationRules *v1alpha1.TconfigdGenerationRules `json:"generationRules"`
+	GenerationRules *v1alpha1.GenerationRules `json:"generationRules"`
 }
 
 func NewClient(tconfigdHost string, tconfigdSpiffeId spiffeid.ID, namespace string, generationRules *v1alpha1.GenerationRulesImp, x509Source *workloadapi.X509Source, logger *zap.Logger) *Client {
@@ -360,7 +360,7 @@ func (c *Client) handleRequest(message []byte) {
 		return
 	}
 
-	c.logger.Info("Received request", zap.String("id", request.ID), zap.String("type", string(request.Type)))
+	c.logger.Debug("Received request", zap.String("id", request.ID), zap.String("type", string(request.Type)))
 
 	switch request.Type {
 	case MessageTypeTraTGenerationRuleUpsertRequest, MessageTypeTratteriaConfigGenerationRuleUpsertRequest:
@@ -398,11 +398,11 @@ func (c *Client) handleRuleUpsertRequest(request Request) {
 			return
 		}
 
-		c.logger.Info("Received pushed generation trat rule",
+		c.logger.Info("Received trat generation rule upsert request",
 			zap.String("endpoint", traTGenerationRule.Endpoint),
 			zap.Any("method", traTGenerationRule.Method))
 
-		err := c.generationRules.AddTraTRule(traTGenerationRule)
+		err := c.generationRules.UpsertTraTRule(traTGenerationRule)
 		if err != nil {
 			c.logger.Error("Failed to upsert trat generation rule", zap.Error(err))
 			c.sendErrorResponse(

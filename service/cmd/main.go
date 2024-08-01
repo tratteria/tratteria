@@ -87,7 +87,7 @@ func main() {
 		}
 	}()
 
-	traTGenAuthorizedSpiffeIDs := func() ([]spiffeid.ID, error) { return generationRules.GetTraTGenerationAuthorizedServicesSpifeeIDs() }
+	traTGenAuthorizedSpiffeIDs := func() ([]spiffeid.ID, error) { return generationRules.GetTokenGenerationAuthorizedServiceIds() }
 
 	go func() {
 		if err := startHTTPSServer(
