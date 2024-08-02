@@ -117,6 +117,15 @@ func (gri *GenerationRulesImp) UpsertTraTRule(traTGenerationRule TraTGenerationR
 	return nil
 }
 
+func (gri *GenerationRulesImp) DeleteTrat(tratName string) {
+	gri.mu.Lock()
+	defer gri.mu.Unlock()
+
+	delete(gri.generationRules.TraTsGenerationRules, tratName)
+
+	gri.indexTraTsGenerationRules()
+}
+
 func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConfigRule TratteriaConfigGenerationRule) {
 	gri.mu.Lock()
 	defer gri.mu.Unlock()

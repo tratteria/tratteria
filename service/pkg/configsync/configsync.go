@@ -55,6 +55,8 @@ const (
 	MessageTypeTratteriaConfigGenerationRuleUpsertResponse MessageType = "TRATTERIA_CONFIG_GENERATION_RULE_UPSERT_RESPONSE"
 	MessageTypeRuleReconciliationRequest                   MessageType = "RULE_RECONCILIATION_REQUEST"
 	MessageTypeRuleReconciliationResponse                  MessageType = "RULE_RECONCILIATION_RESPONSE"
+	MessageTypeTraTDeletionRequest                         MessageType = "TRAT_DELETION_REQUEST"
+	MessageTypeTraTDeletionResponse                        MessageType = "TRAT_DELETION_RESPONSE"
 	MessageTypeUnknown                                     MessageType = "UNKNOWN"
 )
 
@@ -81,6 +83,10 @@ type RegistrationRequest struct {
 
 type AllActiveGenerationRules struct {
 	GenerationRules *v1alpha1.GenerationRules `json:"generationRules"`
+}
+
+type TraTDeletionPayload struct {
+	TraTName string
 }
 
 func NewClient(tconfigdHost string, tconfigdSpiffeId spiffeid.ID, namespace string, generationRules *v1alpha1.GenerationRulesImp, x509Source *workloadapi.X509Source, logger *zap.Logger) *Client {
@@ -345,7 +351,8 @@ func (c *Client) handleMessage(message []byte) {
 	case MessageTypeTraTGenerationRuleUpsertRequest,
 		MessageTypeTratteriaConfigGenerationRuleUpsertRequest,
 		MessageTypeGetJWKSRequest,
-		MessageTypeRuleReconciliationRequest:
+		MessageTypeRuleReconciliationRequest,
+		MessageTypeTraTDeletionRequest:
 		c.handleRequest(message)
 	default:
 		c.logger.Error("Received unknown or unexpected message type.", zap.String("type", string(temp.Type)))
@@ -369,6 +376,8 @@ func (c *Client) handleRequest(message []byte) {
 		c.handleGetJWKSRequest(request)
 	case MessageTypeRuleReconciliationRequest:
 		c.handleRuleReconciliationRequest(request)
+	case MessageTypeTraTDeletionRequest:
+		c.handleTraTDeletionRequest(request)
 	default:
 		c.logger.Error("Received unknown or unexpected request type", zap.String("type", string(request.Type)))
 
@@ -486,6 +495,31 @@ func (c *Client) handleRuleReconciliationRequest(request Request) {
 	err := c.sendResponse(request.ID, MessageTypeRuleReconciliationResponse, http.StatusOK, nil)
 	if err != nil {
 		c.logger.Error("Error sending generation rule reconciliation request response", zap.Error(err))
+	}
+}
+
+func (c *Client) handleTraTDeletionRequest(request Request) {
+	c.logger.Info("Received trat deletion request")
+
+	var traTDeletionPayload TraTDeletionPayload
+
+	if err := json.Unmarshal(request.Payload, &traTDeletionPayload); err != nil {
+		c.logger.Error("Failed to unmarshal trat deletion request payload", zap.Error(err))
+		c.sendErrorResponse(
+			request.ID,
+			MessageTypeTraTDeletionResponse,
+			http.StatusBadRequest,
+			"error parsing trat deletion request payload",
+		)
+
+		return
+	}
+
+	c.generationRules.DeleteTrat(traTDeletionPayload.TraTName)
+
+	err := c.sendResponse(request.ID, MessageTypeTraTDeletionResponse, http.StatusOK, nil)
+	if err != nil {
+		c.logger.Error("Error sending trat deletion request response", zap.Error(err))
 	}
 }
 
