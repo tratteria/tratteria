@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/accessevaluation"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/logging"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjecttokenhandler"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/utils"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"github.com/tratteria/tratteria/pkg/accessevaluation"
+	"github.com/tratteria/tratteria/pkg/common"
+	"github.com/tratteria/tratteria/pkg/logging"
+	"github.com/tratteria/tratteria/pkg/subjecttokenhandler"
+	"github.com/tratteria/tratteria/utils"
 
 	"errors"
 	"regexp"

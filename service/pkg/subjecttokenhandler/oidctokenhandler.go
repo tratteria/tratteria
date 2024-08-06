@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/subjectidentifier"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratteriaerrors"
 	"github.com/coreos/go-oidc"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/tratteria/tratteria/pkg/subjectidentifier"
+	"github.com/tratteria/tratteria/pkg/tratteriaerrors"
 	"go.uber.org/zap"
 )
 

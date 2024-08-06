@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/common"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/tratteriaerrors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/tratteria/tratteria/pkg/common"
+	"github.com/tratteria/tratteria/pkg/generationrules/v1alpha1"
+	"github.com/tratteria/tratteria/pkg/keys"
+	"github.com/tratteria/tratteria/pkg/tratteriaerrors"
 	"go.uber.org/zap"
 )
 
