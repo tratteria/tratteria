@@ -193,7 +193,7 @@ func convertToRegex(template string) string {
 	return "^" + r.Replace(template) + "$"
 }
 
-func (gri *GenerationRulesImp) ConstructScopeAndAzd(txnTokenRequest *common.TokenRequest) (string, map[string]interface{}, error) {
+func (gri *GenerationRulesImp) ConstructPurpAndAzd(txnTokenRequest *common.TokenRequest) (string, map[string]interface{}, error) {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
@@ -300,7 +300,7 @@ func (gri *GenerationRulesImp) GetTokenLifetime() (time.Duration, error) {
 	return duration, nil
 }
 
-func (gri *GenerationRulesImp) EvaluateAccess(txnTokenRequest *common.TokenRequest, subjectTokenClaims interface{}, scope string, azd map[string]any) (bool, error) {
+func (gri *GenerationRulesImp) EvaluateAccess(txnTokenRequest *common.TokenRequest, subjectTokenClaims interface{}, purp string, azd map[string]any) (bool, error) {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
