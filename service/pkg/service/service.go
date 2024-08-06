@@ -65,14 +65,14 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 
 	s.logger.Info("Successfully verified subject token.", zap.Any("subject", subject))
 
-	scope, adz, err := s.generationRules.ConstructScopeAndAzd(txnTokenRequest)
+	purp, adz, err := s.generationRules.ConstructPurpAndAzd(txnTokenRequest)
 	if err != nil {
 		s.logger.Error("Failed to generate scope and authorization details for a request.", zap.Error(err))
 
 		return &TokenResponse{}, err
 	}
 
-	accessEvaluation, err := s.generationRules.EvaluateAccess(txnTokenRequest, subjectTokenClaims, scope, adz)
+	accessEvaluation, err := s.generationRules.EvaluateAccess(txnTokenRequest, subjectTokenClaims, purp, adz)
 	if err != nil {
 		s.logger.Error("Error evaluating access.", zap.Error(err))
 
@@ -82,13 +82,13 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 	if !accessEvaluation {
 		s.logger.Error("Access Denied.",
 			zap.Any("subject", subject),
-			zap.Any("scope", scope),
+			zap.Any("purp", purp),
 		)
 
 		return &TokenResponse{}, tratteriaerrors.ErrAccessDenied
 	}
 
-	s.logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("scope", scope))
+	s.logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("purp", purp))
 
 	txnID, err := uuid.NewRandom()
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 		"exp":  time.Now().Add(tokenLifetime).Unix(),
 		"txn":  txnID,
 		"sub":  subject,
-		"purp": scope,
+		"purp": purp,
 		"azd":  adz,
 		"rctx": txnTokenRequest.RequestContext,
 	})
