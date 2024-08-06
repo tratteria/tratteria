@@ -36,7 +36,7 @@ const (
 var HttpMethodList = []HttpMethod{Get, Post, Put, Delete, Patch, Options}
 
 type RequestDetails struct {
-	Path            string          `json:"endpoint"`
+	Path            string          `json:"path"`
 	Method          HttpMethod      `json:"method"`
 	QueryParameters json.RawMessage `json:"queryParameters"`
 	Headers         json.RawMessage `json:"headers"`
@@ -49,13 +49,13 @@ func (r *RequestDetails) Validate() error {
 	}
 
 	if r.Path == "" {
-		return errors.New("endpoint cannot be empty")
+		return errors.New("path cannot be empty")
 	}
 
 	if parsedPath, err := url.Parse(r.Path); err != nil {
-		return fmt.Errorf("invalid endpoint: %v", err)
+		return fmt.Errorf("invalid path: %v", err)
 	} else if parsedPath.Path != r.Path {
-		return errors.New("endpoint must not include domain or scheme")
+		return errors.New("path must not include domain or scheme")
 	}
 
 	return nil
