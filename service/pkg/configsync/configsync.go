@@ -408,7 +408,7 @@ func (c *Client) handleRuleUpsertRequest(request Request) {
 		}
 
 		c.logger.Info("Received trat generation rule upsert request",
-			zap.String("endpoint", traTGenerationRule.Endpoint),
+			zap.String("path", traTGenerationRule.Path),
 			zap.Any("method", traTGenerationRule.Method))
 
 		err := c.generationRules.UpsertTraTRule(traTGenerationRule)

@@ -38,7 +38,7 @@ type TratteriaConfigGenerationRule struct {
 
 type TraTGenerationRule struct {
 	TraTName   string            `json:"traTName"`
-	Endpoint   string            `json:"endpoint"`
+	Path       string            `json:"path"`
 	Method     common.HttpMethod `json:"method"`
 	Purp       string            `json:"purp"`
 	AzdMapping AzdMapping        `json:"azdmapping,omitempty"`
@@ -96,7 +96,7 @@ func (gri *GenerationRulesImp) indexTraTsGenerationRules() {
 	}
 
 	for _, traTGenerationRules := range gri.generationRules.TraTsGenerationRules {
-		indexedTraTsGenerationRules[traTGenerationRules.Method][traTGenerationRules.Endpoint] = traTGenerationRules
+		indexedTraTsGenerationRules[traTGenerationRules.Method][traTGenerationRules.Path] = traTGenerationRules
 	}
 
 	gri.indexedTraTsGenerationRules = indexedTraTsGenerationRules
