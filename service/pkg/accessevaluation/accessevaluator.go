@@ -153,6 +153,7 @@ func resolveJSONPaths(inputData map[string]interface{}, mapping interface{}) (in
 		return v, nil
 	case map[string]interface{}:
 		resolvedMap := make(map[string]interface{})
+
 		for key, val := range v {
 			resolvedValue, err := resolveJSONPaths(inputData, val)
 			if err != nil {
