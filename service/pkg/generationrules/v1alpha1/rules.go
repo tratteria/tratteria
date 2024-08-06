@@ -36,12 +36,25 @@ type TratteriaConfigGenerationRule struct {
 	TokenGenerationAuthorizedServiceIds []string                              `json:"tokenGenerationAuthorizedServiceIds"`
 }
 
+type DynamicMap struct {
+	Map map[string]interface{} `json:"-"`
+}
+
+func (in *DynamicMap) MarshalJSON() ([]byte, error) {
+	return json.Marshal(in.Map)
+}
+
+func (in *DynamicMap) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &in.Map)
+}
+
 type TraTGenerationRule struct {
-	TraTName   string            `json:"traTName"`
-	Path       string            `json:"path"`
-	Method     common.HttpMethod `json:"method"`
-	Purp       string            `json:"purp"`
-	AzdMapping AzdMapping        `json:"azdmapping,omitempty"`
+	TraTName         string            `json:"traTName"`
+	Path             string            `json:"path"`
+	Method           common.HttpMethod `json:"method"`
+	Purp             string            `json:"purp"`
+	AzdMapping       AzdMapping        `json:"azdmapping,omitempty"`
+	AccessEvaluation *DynamicMap       `json:"accessEvaluation,omitempty"`
 }
 
 type AzdMapping map[string]AzdField
@@ -141,7 +154,7 @@ func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConf
 	if generationTratteriaConfigRule.AccessEvaluationAPI == nil {
 		gri.accessevaluator = nil
 	} else {
-		gri.accessevaluator = accessevaluation.NewAccessEvaluator(generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient)
+		gri.accessevaluator = accessevaluation.NewAccessEvaluator(generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
 	}
 }
 
@@ -300,17 +313,16 @@ func (gri *GenerationRulesImp) GetTokenLifetime() (time.Duration, error) {
 	return duration, nil
 }
 
-func (gri *GenerationRulesImp) EvaluateAccess(txnTokenRequest *common.TokenRequest, subjectTokenClaims interface{}, purp string, azd map[string]any) (bool, error) {
+func (gri *GenerationRulesImp) EvaluateAccess(txnTokenRequest *common.TokenRequest, subjectTokenClaims interface{}) (bool, error) {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	if !gri.accessevaluator.IsAccessEvaluationEnabled() {
-		return true, nil
+	generationTraTRule, pathParameter, err := gri.matchRule(txnTokenRequest.RequestDetails.Path, txnTokenRequest.RequestDetails.Method)
+	if err != nil {
+		return false, fmt.Errorf("error matching generation rule for %s path and %s method: %w", txnTokenRequest.RequestDetails.Path, string(txnTokenRequest.RequestDetails.Method), err)
 	}
 
-	// TODO: implemente access evaluation
-
-	return true, nil
+	return gri.accessevaluator.Evaluate(generationTraTRule.AccessEvaluation.Map, subjectTokenClaims, txnTokenRequest.RequestDetails, txnTokenRequest.RequestContext, pathParameter)
 }
 
 func (gri *GenerationRulesImp) GetSubjectTokenHandler(tokenType common.TokenType) (subjecttokenhandler.TokenHandler, error) {
@@ -345,7 +357,7 @@ func (gri *GenerationRulesImp) UpdateCompleteRules(generationRules *GenerationRu
 
 	if gri.generationRules.TratteriaConfigGenerationRule != nil {
 		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
-		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI, gri.httpClient)
+		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
 	}
 
 	gri.indexTraTsGenerationRules()

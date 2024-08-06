@@ -72,7 +72,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 		return &TokenResponse{}, err
 	}
 
-	accessEvaluation, err := s.generationRules.EvaluateAccess(txnTokenRequest, subjectTokenClaims, purp, adz)
+	accessEvaluation, err := s.generationRules.EvaluateAccess(txnTokenRequest, subjectTokenClaims)
 	if err != nil {
 		s.logger.Error("Error evaluating access.", zap.Error(err))
 
