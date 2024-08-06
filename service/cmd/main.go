@@ -15,14 +15,14 @@ import (
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/handler"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/config"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/configsync"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/logging"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/middlewares"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/service"
+	"github.com/tratteria/tratteria/handler"
+	"github.com/tratteria/tratteria/pkg/config"
+	"github.com/tratteria/tratteria/pkg/configsync"
+	"github.com/tratteria/tratteria/pkg/generationrules/v1alpha1"
+	"github.com/tratteria/tratteria/pkg/keys"
+	"github.com/tratteria/tratteria/pkg/logging"
+	"github.com/tratteria/tratteria/pkg/middlewares"
+	"github.com/tratteria/tratteria/pkg/service"
 )
 
 const (

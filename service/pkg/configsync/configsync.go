@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/generationrules/v1alpha1"
-	"github.com/SGNL-ai/TraTs-Demo-Svcs/txn-token-service/pkg/keys"
 	"github.com/gorilla/websocket"
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
+	"github.com/tratteria/tratteria/pkg/generationrules/v1alpha1"
+	"github.com/tratteria/tratteria/pkg/keys"
 	"go.uber.org/zap"
 )
 
