@@ -36,7 +36,7 @@ type TokenHandlers struct {
 	selfSignedTokenHandler TokenHandler
 }
 
-func NewTokenHandlers(subjectTokens *SubjectTokens, logger *zap.Logger) *TokenHandlers {
+func NewTokenHandlers(subjectTokens SubjectTokens, logger *zap.Logger) *TokenHandlers {
 	handlers := &TokenHandlers{}
 
 	if subjectTokens.OIDC != nil {
