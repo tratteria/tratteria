@@ -360,7 +360,6 @@ func (gri *GenerationRulesImp) UpdateCompleteRules(generationRules *GenerationRu
 	gri.generationRules = generationRules
 
 	if gri.generationRules.TratteriaConfigGenerationRule != nil {
-
 		if gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens == nil {
 			gri.subjectTokenHandlers = nil
 		} else {
