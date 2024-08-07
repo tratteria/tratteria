@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install -g semantic-release @semantic-release/changelog @semantic-release/git
+          npm install -g semantic-release @semantic-release/commit-analyzer
           npm list -g semantic-release
 
       - name: Verify Installation
@@ -48,6 +48,12 @@ jobs:
           if [ -n "$VERSION" ]; then
             echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
             echo "New version: $VERSION"
+            
+            # Create and push tag
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git tag -a v$VERSION -m "Release $VERSION"
+            git push origin v$VERSION
           else
             echo "No new version to release"
             echo "RELEASE_VERSION=latest" >> $GITHUB_ENV
@@ -77,3 +83,22 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ env.RELEASE_VERSION }}
             ghcr.io/${{ github.repository }}:latest
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Tratteria - Transaction Tokens Service
+      
+      - name: Create GitHub Release
+        if: env.RELEASE_VERSION != 'latest'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.RELEASE_VERSION }}
+          name: Release ${{ env.RELEASE_VERSION }}
+          body: |
+            Release ${{ env.RELEASE_VERSION }}
+            
+            Docker images for this release:
+            - `ghcr.io/${{ github.repository }}:${{ env.RELEASE_VERSION }}`
+            
+            For a detailed list of all changes, please refer to the automatically generated release notes below.
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
