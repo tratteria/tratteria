@@ -148,13 +148,13 @@ func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConf
 	if generationTratteriaConfigRule.SubjectTokens == nil {
 		gri.subjectTokenHandlers = nil
 	} else {
-		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(generationTratteriaConfigRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
+		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(*generationTratteriaConfigRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
 	}
 
 	if generationTratteriaConfigRule.AccessEvaluationAPI == nil {
 		gri.accessevaluator = nil
 	} else {
-		gri.accessevaluator = accessevaluation.NewAccessEvaluator(generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
+		gri.accessevaluator = accessevaluation.NewAccessEvaluator(*generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
 	}
 }
 
@@ -317,6 +317,10 @@ func (gri *GenerationRulesImp) EvaluateAccess(txnTokenRequest *common.TokenReque
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
+	if gri.accessevaluator == nil {
+		return true, nil
+	}
+
 	generationTraTRule, pathParameter, err := gri.matchRule(txnTokenRequest.RequestDetails.Path, txnTokenRequest.RequestDetails.Method)
 	if err != nil {
 		return false, fmt.Errorf("error matching generation rule for %s path and %s method: %w", txnTokenRequest.RequestDetails.Path, string(txnTokenRequest.RequestDetails.Method), err)
@@ -356,8 +360,18 @@ func (gri *GenerationRulesImp) UpdateCompleteRules(generationRules *GenerationRu
 	gri.generationRules = generationRules
 
 	if gri.generationRules.TratteriaConfigGenerationRule != nil {
-		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
-		gri.accessevaluator = accessevaluation.NewAccessEvaluator(gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
+
+		if gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens == nil {
+			gri.subjectTokenHandlers = nil
+		} else {
+			gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(*gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
+		}
+
+		if gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI == nil {
+			gri.accessevaluator = nil
+		} else {
+			gri.accessevaluator = accessevaluation.NewAccessEvaluator(*gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
+		}
 	}
 
 	gri.indexTraTsGenerationRules()

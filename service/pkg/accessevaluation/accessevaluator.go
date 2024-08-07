@@ -30,7 +30,8 @@ type Token struct {
 }
 
 type AccessEvaluator struct {
-	accessEvaluationAPI *AccessEvaluationAPI
+	accessEvaluationAPI AccessEvaluationAPI
+	resolvedTokenValue  string
 	httpClient          *http.Client
 	logger              *zap.Logger
 }
@@ -39,24 +40,28 @@ type accessEvaluationResponse struct {
 	Decision bool `json:"decision"`
 }
 
-func NewAccessEvaluator(accessEvaluationAPI *AccessEvaluationAPI, httpClient *http.Client, logger *zap.Logger) *AccessEvaluator {
+func NewAccessEvaluator(accessEvaluationAPI AccessEvaluationAPI, httpClient *http.Client, logger *zap.Logger) *AccessEvaluator {
+	accessEvaluator := &AccessEvaluator{
+		accessEvaluationAPI: accessEvaluationAPI,
+		httpClient:          httpClient,
+		logger:              logger,
+	}
+
 	tokenValue := accessEvaluationAPI.Authentication.Token.Value
 	if strings.HasPrefix(tokenValue, "${") && strings.HasSuffix(tokenValue, "}") {
 		envVarName := strings.TrimPrefix(strings.TrimSuffix(tokenValue, "}"), "${")
 
 		envValue := os.Getenv(envVarName)
 		if envValue != "" {
-			accessEvaluationAPI.Authentication.Token.Value = envValue
+			accessEvaluator.resolvedTokenValue = envValue
 		} else {
 			logger.Error("Environment variable %s not set", zap.String("env-var-name", envVarName))
 		}
+	} else {
+		accessEvaluator.resolvedTokenValue = tokenValue
 	}
 
-	return &AccessEvaluator{
-		accessEvaluationAPI: accessEvaluationAPI,
-		httpClient:          httpClient,
-		logger:              logger,
-	}
+	return accessEvaluator
 }
 
 func (ae *AccessEvaluator) Evaluate(requestMapping map[string]interface{}, subject_token interface{}, requestDetails common.RequestDetails, requestContext map[string]interface{}, pathParameter map[string]string) (bool, error) {
@@ -95,7 +100,7 @@ func (ae *AccessEvaluator) Evaluate(requestMapping map[string]interface{}, subje
 	req.Header.Set("Content-Type", "application/json")
 
 	if ae.accessEvaluationAPI.Authentication.Method == "Bearer" {
-		req.Header.Set("Authorization", "Bearer "+ae.accessEvaluationAPI.Authentication.Token.Value)
+		req.Header.Set("Authorization", "Bearer "+ae.resolvedTokenValue)
 	}
 
 	resp, err := ae.httpClient.Do(req)
@@ -124,10 +129,6 @@ func (ae *AccessEvaluator) Evaluate(requestMapping map[string]interface{}, subje
 }
 
 func (ae *AccessEvaluator) IsAccessEvaluationEnabled() bool {
-	if ae.accessEvaluationAPI == nil {
-		return false
-	}
-
 	return ae.accessEvaluationAPI.EnableAccessEvaluation
 }
 
