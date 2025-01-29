@@ -14,8 +14,8 @@ import (
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
 	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
-	"github.com/tratteria/tratteria/pkg/generationrules/v1alpha1"
-	"github.com/tratteria/tratteria/pkg/keys"
+	"github.com/tokenetes/tokenetes/pkg/generationrules/v1alpha1"
+	"github.com/tokenetes/tokenetes/pkg/keys"
 	"go.uber.org/zap"
 )
 
@@ -51,8 +51,8 @@ const (
 	MessageTypeGetJWKSResponse                             MessageType = "GET_JWKS_RESPONSE"
 	MessageTypeTraTGenerationRuleUpsertRequest             MessageType = "TRAT_GENERATION_RULE_UPSERT_REQUEST"
 	MessageTypeTraTGenerationRuleUpsertResponse            MessageType = "TRAT_GENERATION_RULE_UPSERT_RESPONSE"
-	MessageTypeTratteriaConfigGenerationRuleUpsertRequest  MessageType = "TRATTERIA_CONFIG_GENERATION_RULE_UPSERT_REQUEST"
-	MessageTypeTratteriaConfigGenerationRuleUpsertResponse MessageType = "TRATTERIA_CONFIG_GENERATION_RULE_UPSERT_RESPONSE"
+	MessageTypeTokenetesConfigGenerationRuleUpsertRequest  MessageType = "TRATTERIA_CONFIG_GENERATION_RULE_UPSERT_REQUEST"
+	MessageTypeTokenetesConfigGenerationRuleUpsertResponse MessageType = "TRATTERIA_CONFIG_GENERATION_RULE_UPSERT_RESPONSE"
 	MessageTypeRuleReconciliationRequest                   MessageType = "RULE_RECONCILIATION_REQUEST"
 	MessageTypeRuleReconciliationResponse                  MessageType = "RULE_RECONCILIATION_RESPONSE"
 	MessageTypeTraTDeletionRequest                         MessageType = "TRAT_DELETION_REQUEST"
@@ -349,7 +349,7 @@ func (c *Client) handleMessage(message []byte) {
 
 	switch temp.Type {
 	case MessageTypeTraTGenerationRuleUpsertRequest,
-		MessageTypeTratteriaConfigGenerationRuleUpsertRequest,
+		MessageTypeTokenetesConfigGenerationRuleUpsertRequest,
 		MessageTypeGetJWKSRequest,
 		MessageTypeRuleReconciliationRequest,
 		MessageTypeTraTDeletionRequest:
@@ -370,7 +370,7 @@ func (c *Client) handleRequest(message []byte) {
 	c.logger.Debug("Received request", zap.String("id", request.ID), zap.String("type", string(request.Type)))
 
 	switch request.Type {
-	case MessageTypeTraTGenerationRuleUpsertRequest, MessageTypeTratteriaConfigGenerationRuleUpsertRequest:
+	case MessageTypeTraTGenerationRuleUpsertRequest, MessageTypeTokenetesConfigGenerationRuleUpsertRequest:
 		c.handleRuleUpsertRequest(request)
 	case MessageTypeGetJWKSRequest:
 		c.handleGetJWKSRequest(request)
@@ -429,26 +429,26 @@ func (c *Client) handleRuleUpsertRequest(request Request) {
 			c.logger.Error("Error sending trat generation upsert request response", zap.Error(err))
 		}
 
-	case MessageTypeTratteriaConfigGenerationRuleUpsertRequest:
-		var tratteriaConfigGenerationRule v1alpha1.TratteriaConfigGenerationRule
+	case MessageTypeTokenetesConfigGenerationRuleUpsertRequest:
+		var tokenetesConfigGenerationRule v1alpha1.TokenetesConfigGenerationRule
 
-		if err := json.Unmarshal(request.Payload, &tratteriaConfigGenerationRule); err != nil {
-			c.logger.Error("Failed to unmarshal tratteria config generation rule", zap.Error(err))
+		if err := json.Unmarshal(request.Payload, &tokenetesConfigGenerationRule); err != nil {
+			c.logger.Error("Failed to unmarshal tokenetes config generation rule", zap.Error(err))
 			c.sendErrorResponse(
 				request.ID,
-				MessageTypeTratteriaConfigGenerationRuleUpsertResponse,
+				MessageTypeTokenetesConfigGenerationRuleUpsertResponse,
 				http.StatusBadRequest,
-				"error parsing tratteria config generation rule",
+				"error parsing tokenetes config generation rule",
 			)
 
 			return
 		}
 
-		c.logger.Info("Received tratteria config generation rule upsert request")
+		c.logger.Info("Received tokenetes config generation rule upsert request")
 
-		c.generationRules.UpdateTratteriaConfigRule(tratteriaConfigGenerationRule)
+		c.generationRules.UpdateTokenetesConfigRule(tokenetesConfigGenerationRule)
 
-		err := c.sendResponse(request.ID, MessageTypeTratteriaConfigGenerationRuleUpsertResponse, http.StatusOK, nil)
+		err := c.sendResponse(request.ID, MessageTypeTokenetesConfigGenerationRuleUpsertResponse, http.StatusOK, nil)
 		if err != nil {
 			c.logger.Error("Error sending trat generation upsert request response", zap.Error(err))
 		}

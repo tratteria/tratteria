@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tratteria
+  name: tokenetes
   namespace: [your-namespace]  # Replace [your-namespace] with your Kubernetes namespace
 spec:
-  replicas: 1 # Set the number of Tratteria instances you want running. Adjust this number based on your scalability needs.
+  replicas: 1 # Set the number of Tokenetes instances you want running. Adjust this number based on your scalability needs.
   selector:
     matchLabels:
-      app: tratteria
+      app: tokenetes
   template:
     metadata:
       labels:
-        app: tratteria
+        app: tokenetes
     spec:
-      serviceAccountName: tratteria-service-account
+      serviceAccountName: tokenetes-service-account
       containers:
-        - image: ghcr.io/tratteria/tratteria:latest
-          name: tratteria
+        - image: ghcr.io/tokenetes/tokenetes:latest
+          name: tokenetes
           ports:
             - containerPort: 80
               protocol: TCP
@@ -30,7 +30,7 @@ spec:
             - name: TCONFIGD_SPIFFE_ID
               value: spiffe://[your-trust-domain]/tconfigd # Replace [your-trust-domain] with your Kubernetes namespace
             - name: TCONFIGD_HOST
-              value: tconfigd.tratteria-system.svc.cluster.local:8443
+              value: tconfigd.tokenetes-system.svc.cluster.local:8443
             - name: SPIFFE_ENDPOINT_SOCKET
               value: unix:///run/spire/sockets/agent.sock
             - name: MY_NAMESPACE

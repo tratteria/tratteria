@@ -82,7 +82,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ env.RELEASE_VERSION }}
             ghcr.io/${{ github.repository }}:latest
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Tratteria - Transaction Tokens Service
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Tokenetes - Transaction Tokens Service
       
       - name: Create GitHub Release
         if: env.RELEASE_VERSION != 'latest'

@@ -1,4 +1,4 @@
-package tratteriaerrors
+package tokeneteserrors
 
 import (
 	"errors"

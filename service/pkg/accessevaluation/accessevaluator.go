@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/tidwall/gjson"
-	"github.com/tratteria/tratteria/pkg/common"
+	"github.com/tokenetes/tokenetes/pkg/common"
 	"go.uber.org/zap"
 )
 

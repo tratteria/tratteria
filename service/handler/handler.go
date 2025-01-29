@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/tratteria/tratteria/pkg/common"
-	"github.com/tratteria/tratteria/pkg/service"
-	"github.com/tratteria/tratteria/pkg/tratteriaerrors"
+	"github.com/tokenetes/tokenetes/pkg/common"
+	"github.com/tokenetes/tokenetes/pkg/service"
+	"github.com/tokenetes/tokenetes/pkg/tokeneteserrors"
 
 	"go.uber.org/zap"
 )
@@ -136,9 +136,9 @@ func (h *Handlers) TokenEndpointHandler(w http.ResponseWriter, r *http.Request) 
 		h.Logger.Error("Error generating txn token.", zap.Error(err))
 
 		switch err {
-		case tratteriaerrors.ErrParsingSubjectToken, tratteriaerrors.ErrInvalidSubjectTokenClaims, tratteriaerrors.ErrUnsupportedTokenType, tratteriaerrors.ErrSubjectFieldNotFound:
+		case tokeneteserrors.ErrParsingSubjectToken, tokeneteserrors.ErrInvalidSubjectTokenClaims, tokeneteserrors.ErrUnsupportedTokenType, tokeneteserrors.ErrSubjectFieldNotFound:
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case tratteriaerrors.ErrAccessDenied:
+		case tokeneteserrors.ErrAccessDenied:
 			http.Error(w, err.Error(), http.StatusForbidden)
 		default:
 			http.Error(w, "Internal server error", http.StatusInternalServerError)

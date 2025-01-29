@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/tratteria/tratteria/pkg/subjectidentifier"
-	"github.com/tratteria/tratteria/pkg/tratteriaerrors"
+	"github.com/tokenetes/tokenetes/pkg/subjectidentifier"
+	"github.com/tokenetes/tokenetes/pkg/tokeneteserrors"
 	"go.uber.org/zap"
 )
 
@@ -62,7 +62,7 @@ func (s *SelfSignedTokenHandler) VerifyAndParse(ctx context.Context, token strin
 			return claims, nil
 		}
 
-		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
+		return nil, tokeneteserrors.ErrInvalidSubjectTokenClaims
 	} else {
 		s.logger.Warn("Parsing token without validating; this poses a security risk")
 
@@ -75,19 +75,19 @@ func (s *SelfSignedTokenHandler) VerifyAndParse(ctx context.Context, token strin
 			return claims, nil
 		}
 
-		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
+		return nil, tokeneteserrors.ErrInvalidSubjectTokenClaims
 	}
 }
 
 func (o *SelfSignedTokenHandler) ExtractSubject(claims interface{}) (subjectidentifier.Identifier, error) {
 	mapClaims, ok := claims.(jwt.MapClaims)
 	if !ok {
-		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
+		return nil, tokeneteserrors.ErrInvalidSubjectTokenClaims
 	}
 
 	subValue, ok := mapClaims["sub"]
 	if !ok {
-		return nil, tratteriaerrors.ErrSubjectFieldNotFound
+		return nil, tokeneteserrors.ErrSubjectFieldNotFound
 	}
 
 	return subValue, nil

@@ -15,14 +15,14 @@ import (
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 
-	"github.com/tratteria/tratteria/handler"
-	"github.com/tratteria/tratteria/pkg/config"
-	"github.com/tratteria/tratteria/pkg/configsync"
-	"github.com/tratteria/tratteria/pkg/generationrules/v1alpha1"
-	"github.com/tratteria/tratteria/pkg/keys"
-	"github.com/tratteria/tratteria/pkg/logging"
-	"github.com/tratteria/tratteria/pkg/middlewares"
-	"github.com/tratteria/tratteria/pkg/service"
+	"github.com/tokenetes/tokenetes/handler"
+	"github.com/tokenetes/tokenetes/pkg/config"
+	"github.com/tokenetes/tokenetes/pkg/configsync"
+	"github.com/tokenetes/tokenetes/pkg/generationrules/v1alpha1"
+	"github.com/tokenetes/tokenetes/pkg/keys"
+	"github.com/tokenetes/tokenetes/pkg/logging"
+	"github.com/tokenetes/tokenetes/pkg/middlewares"
+	"github.com/tokenetes/tokenetes/pkg/service"
 )
 
 const (
@@ -102,7 +102,7 @@ func main() {
 
 	<-ctx.Done()
 
-	mainLogger.Info("Shutting down tratteria...")
+	mainLogger.Info("Shutting down tokenetes...")
 }
 
 func startHTTPServer(handlers *handler.Handlers, logger *zap.Logger) error {
