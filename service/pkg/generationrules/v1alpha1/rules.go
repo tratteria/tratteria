@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/spiffe/go-spiffe/v2/spiffeid"
-	"github.com/tratteria/tratteria/pkg/accessevaluation"
-	"github.com/tratteria/tratteria/pkg/common"
-	"github.com/tratteria/tratteria/pkg/logging"
-	"github.com/tratteria/tratteria/pkg/subjecttokenhandler"
-	"github.com/tratteria/tratteria/utils"
+	"github.com/tokenetes/tokenetes/pkg/accessevaluation"
+	"github.com/tokenetes/tokenetes/pkg/common"
+	"github.com/tokenetes/tokenetes/pkg/logging"
+	"github.com/tokenetes/tokenetes/pkg/subjecttokenhandler"
+	"github.com/tokenetes/tokenetes/utils"
 
 	"errors"
 	"regexp"
@@ -23,14 +23,14 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type TratteriaConfigToken struct {
+type TokenetesConfigToken struct {
 	Issuer   string `json:"issuer"`
 	Audience string `json:"audience"`
 	LifeTime string `json:"lifeTime"`
 }
 
-type TratteriaConfigGenerationRule struct {
-	Token                               *TratteriaConfigToken                 `json:"token"`
+type TokenetesConfigGenerationRule struct {
+	Token                               *TokenetesConfigToken                 `json:"token"`
 	SubjectTokens                       *subjecttokenhandler.SubjectTokens    `json:"subjectTokens"`
 	AccessEvaluationAPI                 *accessevaluation.AccessEvaluationAPI `json:"accessEvaluationAPI"`
 	TokenGenerationAuthorizedServiceIds []string                              `json:"tokenGenerationAuthorizedServiceIds"`
@@ -66,13 +66,13 @@ type AzdField struct {
 type IndexedTraTsGenerationRules map[common.HttpMethod]map[string]*TraTGenerationRule
 
 type GenerationRules struct {
-	TratteriaConfigGenerationRule *TratteriaConfigGenerationRule `json:"tratteriaConfigGenerationRule"`
+	TokenetesConfigGenerationRule *TokenetesConfigGenerationRule `json:"tokenetesConfigGenerationRule"`
 	TraTsGenerationRules          map[string]*TraTGenerationRule `json:"traTsGenerationRules"`
 }
 
 func NewGenerationRules() *GenerationRules {
 	return &GenerationRules{
-		TratteriaConfigGenerationRule: &TratteriaConfigGenerationRule{},
+		TokenetesConfigGenerationRule: &TokenetesConfigGenerationRule{},
 		TraTsGenerationRules:          make(map[string]*TraTGenerationRule),
 	}
 }
@@ -139,22 +139,22 @@ func (gri *GenerationRulesImp) DeleteTrat(tratName string) {
 	gri.indexTraTsGenerationRules()
 }
 
-func (gri *GenerationRulesImp) UpdateTratteriaConfigRule(generationTratteriaConfigRule TratteriaConfigGenerationRule) {
+func (gri *GenerationRulesImp) UpdateTokenetesConfigRule(generationTokenetesConfigRule TokenetesConfigGenerationRule) {
 	gri.mu.Lock()
 	defer gri.mu.Unlock()
 
-	gri.generationRules.TratteriaConfigGenerationRule = &generationTratteriaConfigRule
+	gri.generationRules.TokenetesConfigGenerationRule = &generationTokenetesConfigRule
 
-	if generationTratteriaConfigRule.SubjectTokens == nil {
+	if generationTokenetesConfigRule.SubjectTokens == nil {
 		gri.subjectTokenHandlers = nil
 	} else {
-		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(*generationTratteriaConfigRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
+		gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(*generationTokenetesConfigRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
 	}
 
-	if generationTratteriaConfigRule.AccessEvaluationAPI == nil {
+	if generationTokenetesConfigRule.AccessEvaluationAPI == nil {
 		gri.accessevaluator = nil
 	} else {
-		gri.accessevaluator = accessevaluation.NewAccessEvaluator(*generationTratteriaConfigRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
+		gri.accessevaluator = accessevaluation.NewAccessEvaluator(*generationTokenetesConfigRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
 	}
 }
 
@@ -291,21 +291,21 @@ func (gri *GenerationRulesImp) GetIssuer() string {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	return gri.generationRules.TratteriaConfigGenerationRule.Token.Issuer
+	return gri.generationRules.TokenetesConfigGenerationRule.Token.Issuer
 }
 
 func (gri *GenerationRulesImp) GetAudience() string {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	return gri.generationRules.TratteriaConfigGenerationRule.Token.Audience
+	return gri.generationRules.TokenetesConfigGenerationRule.Token.Audience
 }
 
 func (gri *GenerationRulesImp) GetTokenLifetime() (time.Duration, error) {
 	gri.mu.RLock()
 	defer gri.mu.RUnlock()
 
-	duration, err := time.ParseDuration(gri.generationRules.TratteriaConfigGenerationRule.Token.LifeTime)
+	duration, err := time.ParseDuration(gri.generationRules.TokenetesConfigGenerationRule.Token.LifeTime)
 	if err != nil {
 		return 0, fmt.Errorf("error parsing token lifetime: %v", err)
 	}
@@ -334,11 +334,11 @@ func (gri *GenerationRulesImp) GetSubjectTokenHandler(tokenType common.TokenType
 }
 
 func (gri *GenerationRulesImp) GetTokenGenerationAuthorizedServiceIds() ([]spiffeid.ID, error) {
-	if gri.generationRules.TratteriaConfigGenerationRule == nil {
+	if gri.generationRules.TokenetesConfigGenerationRule == nil {
 		return []spiffeid.ID{}, nil
 	}
 
-	stringIDs := gri.generationRules.TratteriaConfigGenerationRule.TokenGenerationAuthorizedServiceIds
+	stringIDs := gri.generationRules.TokenetesConfigGenerationRule.TokenGenerationAuthorizedServiceIds
 	spiffeIDs := make([]spiffeid.ID, 0, len(stringIDs))
 
 	for _, idStr := range stringIDs {
@@ -359,17 +359,17 @@ func (gri *GenerationRulesImp) UpdateCompleteRules(generationRules *GenerationRu
 
 	gri.generationRules = generationRules
 
-	if gri.generationRules.TratteriaConfigGenerationRule != nil {
-		if gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens == nil {
+	if gri.generationRules.TokenetesConfigGenerationRule != nil {
+		if gri.generationRules.TokenetesConfigGenerationRule.SubjectTokens == nil {
 			gri.subjectTokenHandlers = nil
 		} else {
-			gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(*gri.generationRules.TratteriaConfigGenerationRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
+			gri.subjectTokenHandlers = subjecttokenhandler.NewTokenHandlers(*gri.generationRules.TokenetesConfigGenerationRule.SubjectTokens, logging.GetLogger("subject-token-handler"))
 		}
 
-		if gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI == nil {
+		if gri.generationRules.TokenetesConfigGenerationRule.AccessEvaluationAPI == nil {
 			gri.accessevaluator = nil
 		} else {
-			gri.accessevaluator = accessevaluation.NewAccessEvaluator(*gri.generationRules.TratteriaConfigGenerationRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
+			gri.accessevaluator = accessevaluation.NewAccessEvaluator(*gri.generationRules.TokenetesConfigGenerationRule.AccessEvaluationAPI, gri.httpClient, logging.GetLogger("access-evaluator"))
 		}
 	}
 

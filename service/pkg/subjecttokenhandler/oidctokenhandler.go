@@ -7,8 +7,8 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/tratteria/tratteria/pkg/subjectidentifier"
-	"github.com/tratteria/tratteria/pkg/tratteriaerrors"
+	"github.com/tokenetes/tokenetes/pkg/subjectidentifier"
+	"github.com/tokenetes/tokenetes/pkg/tokeneteserrors"
 	"go.uber.org/zap"
 )
 
@@ -42,7 +42,7 @@ func (o *OIDCTokenHandler) VerifyAndParse(ctx context.Context, token string) (in
 	var claims jwt.MapClaims
 
 	if err := idToken.Claims(&claims); err != nil {
-		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
+		return nil, tokeneteserrors.ErrInvalidSubjectTokenClaims
 	}
 
 	return claims, nil
@@ -51,12 +51,12 @@ func (o *OIDCTokenHandler) VerifyAndParse(ctx context.Context, token string) (in
 func (o *OIDCTokenHandler) ExtractSubject(claims interface{}) (subjectidentifier.Identifier, error) {
 	mapClaims, ok := claims.(jwt.MapClaims)
 	if !ok {
-		return nil, tratteriaerrors.ErrInvalidSubjectTokenClaims
+		return nil, tokeneteserrors.ErrInvalidSubjectTokenClaims
 	}
 
 	subjectValue, ok := mapClaims[o.subjectField].(string)
 	if !ok {
-		return nil, tratteriaerrors.ErrSubjectFieldNotFound
+		return nil, tokeneteserrors.ErrSubjectFieldNotFound
 	}
 
 	return subjectidentifier.NewIdentifier(o.subjectField, subjectValue)

@@ -1,17 +1,17 @@
-# Kubernetes Configuration for tratteria
+# Kubernetes Configuration for tokenetes
 
-This directory contains the necessary Kubernetes YAML files to deploy Tratteria. Below are the instructions on how to deploy Tratteria on Kubernetes:
+This directory contains the necessary Kubernetes YAML files to deploy Tokenetes. Below are the instructions on how to deploy Tokenetes on Kubernetes:
 
 ## Files Included
 
-- `deployment.yaml`: Defines the Kubernetes Deployment for Tratteria.
-- `service.yaml`: Defines the Kubernetes Service for Tratteria.
-- `service-account.yaml`: Sets up a Kubernetes Service Account for Tratteria.
+- `deployment.yaml`: Defines the Kubernetes Deployment for Tokenetes.
+- `service.yaml`: Defines the Kubernetes Service for Tokenetes.
+- `service-account.yaml`: Sets up a Kubernetes Service Account for Tokenetes.
 
 
 ## Prerequisites
 
-Before deploying, ensure [tconfigd](https://github.com/tratteria/tconfigd) is installed in your Kubernetes cluster. If not, follow the [tconfigd installation instructions](https://github.com/tratteria/tconfigd/tree/main/installation) to install it in your Kubernetes cluster.
+Before deploying, ensure [tconfigd](https://github.com/tokenetes/tconfigd) is installed in your Kubernetes cluster. If not, follow the [tconfigd installation instructions](https://github.com/tokenetes/tconfigd/tree/main/installation) to install it in your Kubernetes cluster.
 
 ## Configuration Adjustments
 
@@ -31,7 +31,7 @@ volumes:
       type: Directory
 ```
 
-## Deploying tratteria
+## Deploying tokenetes
 
 ```bash
 kubectl apply -f service-account.yaml

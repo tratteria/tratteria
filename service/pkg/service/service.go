@@ -8,10 +8,10 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/tratteria/tratteria/pkg/common"
-	"github.com/tratteria/tratteria/pkg/generationrules/v1alpha1"
-	"github.com/tratteria/tratteria/pkg/keys"
-	"github.com/tratteria/tratteria/pkg/tratteriaerrors"
+	"github.com/tokenetes/tokenetes/pkg/common"
+	"github.com/tokenetes/tokenetes/pkg/generationrules/v1alpha1"
+	"github.com/tokenetes/tokenetes/pkg/keys"
+	"github.com/tokenetes/tokenetes/pkg/tokeneteserrors"
 	"go.uber.org/zap"
 )
 
@@ -85,7 +85,7 @@ func (s *Service) GenerateTxnToken(ctx context.Context, txnTokenRequest *common.
 			zap.Any("purp", purp),
 		)
 
-		return &TokenResponse{}, tratteriaerrors.ErrAccessDenied
+		return &TokenResponse{}, tokeneteserrors.ErrAccessDenied
 	}
 
 	s.logger.Info("Access authorized for request.", zap.Any("subject", subject), zap.String("purp", purp))

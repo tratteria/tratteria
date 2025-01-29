@@ -1,1 +1,1 @@
-docker build -t tratteria:latest -f ../service/Dockerfile ../service/
+docker build -t tokenetes:latest -f ../service/Dockerfile ../service/

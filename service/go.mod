@@ -1,4 +1,4 @@
-module github.com/tratteria/tratteria
+module github.com/tokenetes/tokenetes
 
 go 1.22.0
 

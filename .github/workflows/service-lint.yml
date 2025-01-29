@@ -1,4 +1,4 @@
-name: Lint Tratteria Service
+name: Lint Tokenetes Service
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   lint:
-    name: Run golangci-lint on tratteria Service
+    name: Run golangci-lint on tokenetes Service
     runs-on: ubuntu-latest
     steps:
       - name: Check out code

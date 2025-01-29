@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tratteria/tratteria/pkg/common"
-	"github.com/tratteria/tratteria/pkg/subjectidentifier"
+	"github.com/tokenetes/tokenetes/pkg/common"
+	"github.com/tokenetes/tokenetes/pkg/subjectidentifier"
 	"go.uber.org/zap"
 )
 

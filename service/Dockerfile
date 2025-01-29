@@ -5,16 +5,16 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -o tratteria ./cmd
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -o tokenetes ./cmd
 
 # Second stage: runtime environment
 FROM --platform=$TARGETPLATFORM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
-COPY --from=builder /app/tratteria .
+COPY --from=builder /app/tokenetes .
 
-LABEL org.opencontainers.image.source=https://github.com/tratteria/tratteria
-LABEL org.opencontainers.image.description="Tratteria - Transaction Tokens Service"
+LABEL org.opencontainers.image.source=https://github.com/tokenetes/tokenetes
+LABEL org.opencontainers.image.description="Tokenetes - Transaction Tokens Service"
 LABEL org.opencontainers.image.licenses=Apache
 
-ENTRYPOINT ["./tratteria"]
+ENTRYPOINT ["./tokenetes"]

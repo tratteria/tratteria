@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tratteria
+  name: tokenetes
   namespace: [your-namespace]  # Replace [your-namespace] with the desired Kubernetes namespace
 spec:
   ports:
@@ -12,5 +12,5 @@ spec:
       port: 443
       targetPort: 443
   selector:
-    app: tratteria
+    app: tokenetes
     
