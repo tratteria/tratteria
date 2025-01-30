@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/tokenetes-icon-final.png" alt="Tokenetes Logo" title="Tokenetes Logo" height="400">
+  <img src="docs/images/tokenetes - preview - transparent-02.png" alt="Tokenetes Logo" title="Tokenetes Logo" height="400">
 </p>
 
 Tokenetes is an open source Transaction Tokens (TraTs) Service. The Transaction Tokens draft is defined [here](https://datatracker.ietf.org/doc/draft-ietf-oauth-transaction-tokens/). This repository contains the source code and deployment resources for the Tokenetes service.
